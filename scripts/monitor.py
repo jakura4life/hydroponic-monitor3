@@ -3,7 +3,7 @@ from firebase_admin import credentials, db, messaging
 import json
 import os
 import smtplib
-from email.mime.text import MimeText
+from email.mime.text import MIMEText
 from datetime import datetime
 
 def initialize_firebase():
@@ -92,7 +92,7 @@ def send_email_alert(alerts, sensor_data):
         body += f"Temperature: {sensor_data.get('temperature', 'N/A')}C\n"
         body += f"Humidity: {sensor_data.get('humidity', 'N/A')}%\n"
         
-        msg = MimeText(body)
+        msg = MIMEText(body)
         msg['Subject'] = subject
         msg['From'] = email_from
         msg['To'] = email_to
