@@ -2,6 +2,8 @@ import firebase_admin
 from firebase_admin import credentials, db, messaging
 import json
 import os
+import smtplib
+from email.mime.text import MimeText
 from datetime import datetime
 
 def initialize_firebase():
@@ -55,74 +57,68 @@ def check_sensor_ranges(db_ref):
         
         # Send notifications if any alerts
         if alerts:
-            send_notifications(alerts, sensor_data)
+            print(f"Alerts detected: {alerts}")
+            # Try email notification
+            send_email_alert(alerts, sensor_data)
+            # Log to database
+            log_alert(alerts, sensor_data, db_ref)
         else:
             print("All sensor readings are within normal ranges")
             
     except Exception as e:
         print(f"Error checking sensor data: {e}")
 
-def send_notifications(alerts, sensor_data):
-    """Send push notifications for alerts"""
+def send_email_alert(alerts, sensor_data):
+    """Send email notification for alerts"""
     try:
-        # Get all user tokens from Realtime Database
-        tokens_ref = db.reference('userTokens')
-        tokens_data = tokens_ref.get()
+
+        smtp_server = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
+        smtp_port = int(os.environ.get('SMTP_PORT', 587))
+        email_from = os.environ.get('EMAIL_FROM')
+        email_password = os.environ.get('EMAIL_PASSWORD')
+        email_to = os.environ.get('EMAIL_TO', email_from)
         
-        tokens = []
-        if tokens_data:
-            # tokens_data could be a dict of user tokens
-            for user_id, token_data in tokens_data.items():
-                if isinstance(token_data, dict) and 'token' in token_data:
-                    tokens.append(token_data['token'])
-                elif isinstance(token_data, str):
-                    # If tokens are stored as simple string values
-                    tokens.append(token_data)
-        
-        if not tokens:
-            print("No user tokens found for notifications")
+        if not email_from or not email_password:
+            print("Email credentials not set. Setting up console alerts only.")
             return
         
-        # Create notification message
-        alert_text = "\n".join(alerts)
-        title = "Hydroponic Alert!"
-        body = f"Sensor readings out of range:\n{alert_text}"
+        subject = "Hydroponic System Alert"
+        body = f"Hydroponic System Alert\n\n"
+        body += f"Time: {datetime.now()}\n\n"
+        body += "Alerts:\n"
+        for alert in alerts:
+            body += f"- {alert}\n"
+        body += f"\nCurrent Sensor Data:\n"
+        body += f"Temperature: {sensor_data.get('temperature', 'N/A')}C\n"
+        body += f"Humidity: {sensor_data.get('humidity', 'N/A')}%\n"
         
-        message = messaging.MulticastMessage(
-            notification=messaging.Notification(
-                title=title,
-                body=body
-            ),
-            data={
-                'alert_count': str(len(alerts)),
-                'timestamp': str(sensor_data.get('timestamp', '')),
-                'type': 'sensor_alert'
-            },
-            tokens=tokens
-        )
+        msg = MimeText(body)
+        msg['Subject'] = subject
+        msg['From'] = email_from
+        msg['To'] = email_to
         
-        # Send notification
-        response = messaging.send_multicast(message)
-        print(f"Sent {response.success_count}/{len(tokens)} notifications")
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(email_from, email_password)
+        server.send_message(msg)
+        server.quit()
         
-        # Log the alert to Realtime Database
-        log_alert(alerts, sensor_data, len(tokens), response.success_count)
+        print("Email alert sent successfully")
         
     except Exception as e:
-        print(f"Error sending notifications: {e}")
+        print(f"Error sending email: {e}")
 
-def log_alert(alerts, sensor_data, sent_count, success_count):
+def log_alert(alerts, sensor_data, db_ref):
     """Log alert to Realtime Database for history"""
     try:
-        alert_ref = db.reference('alerts').push()
-        alert_ref.set({
+        alert_ref = db_ref.child('alerts').push()
+        alert_data = {
             'alerts': alerts,
             'sensor_data': sensor_data,
-            'sent_to_count': sent_count,
-            'success_count': success_count,
-            'created_at': {'.sv': 'timestamp'},  # Firebase server timestamp
+            'created_at': {'.sv': 'timestamp'},
             'checked_at': datetime.now().isoformat()
-        })
+        }
+        alert_ref.set(alert_data)
         print("Alert logged to Realtime Database")
     except Exception as e:
         print(f"Error logging alert: {e}")
