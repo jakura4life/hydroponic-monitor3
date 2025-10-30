@@ -1,5 +1,5 @@
 import firebase_admin
-from firebase_admin import credentials, firestore, messaging
+from firebase_admin import credentials, db, messaging
 import json
 import os
 from datetime import datetime
@@ -14,38 +14,39 @@ def initialize_firebase():
     cred = credentials.Certificate(cred_dict)
     
     if not firebase_admin._apps:
-        firebase_admin.initialize_app(cred)
+        # Initialize with Realtime Database URL
+        firebase_admin.initialize_app(cred, {
+            'databaseURL': 'https://your-project-id-default-rtdb.firebaseio.com/'  # Replace with your URL
+        })
     
-    return firestore.client()
+    return db.reference()
 
-def check_sensor_ranges(db):
+def check_sensor_ranges(db_ref):
     """Check if sensor data is within acceptable ranges"""
     print(f"Checking sensor data at {datetime.now()}")
     
     try:
-        # Get current sensor data
-        doc_ref = db.collection('sensorData').document('current')
-        doc = doc_ref.get()
+        # Get current sensor data from Realtime Database
+        sensor_data = db_ref.child('sensorData').child('current').get()
         
-        if not doc.exists:
+        if not sensor_data:
             print("No sensor data found")
             return
         
-        data = doc.to_dict()
-        print(f"Current data: {data}")
+        print(f"Current data: {sensor_data}")
         
         alerts = []
         
         # Check temperature
-        temperature = data.get('temperature')
+        temperature = sensor_data.get('temperature')
         if temperature is not None:
             if temperature < 12:
-                alerts.append(f"Temperature too low: {temperature}°C (min: 12°C)")
+                alerts.append(f"Temperature too low: {temperature}C (min: 12C)")
             elif temperature > 30:
-                alerts.append(f"Temperature too high: {temperature}°C (max: 30°C)")
+                alerts.append(f"Temperature too high: {temperature}C (max: 30C)")
         
         # Check humidity
-        humidity = data.get('humidity')
+        humidity = sensor_data.get('humidity')
         if humidity is not None:
             if humidity < 50:
                 alerts.append(f"Humidity too low: {humidity}% (min: 50%)")
@@ -54,25 +55,29 @@ def check_sensor_ranges(db):
         
         # Send notifications if any alerts
         if alerts:
-            send_notifications(alerts, data, db)
+            send_notifications(alerts, sensor_data)
         else:
             print("All sensor readings are within normal ranges")
             
     except Exception as e:
         print(f"Error checking sensor data: {e}")
 
-def send_notifications(alerts, sensor_data, db):
+def send_notifications(alerts, sensor_data):
     """Send push notifications for alerts"""
     try:
-        # Get all user tokens
-        tokens_ref = db.collection('userTokens')
-        docs = tokens_ref.stream()
+        # Get all user tokens from Realtime Database
+        tokens_ref = db.reference('userTokens')
+        tokens_data = tokens_ref.get()
         
         tokens = []
-        for doc in docs:
-            token_data = doc.to_dict()
-            if 'token' in token_data:
-                tokens.append(token_data['token'])
+        if tokens_data:
+            # tokens_data could be a dict of user tokens
+            for user_id, token_data in tokens_data.items():
+                if isinstance(token_data, dict) and 'token' in token_data:
+                    tokens.append(token_data['token'])
+                elif isinstance(token_data, str):
+                    # If tokens are stored as simple string values
+                    tokens.append(token_data)
         
         if not tokens:
             print("No user tokens found for notifications")
@@ -100,25 +105,25 @@ def send_notifications(alerts, sensor_data, db):
         response = messaging.send_multicast(message)
         print(f"Sent {response.success_count}/{len(tokens)} notifications")
         
-        # Log the alert
-        log_alert(alerts, sensor_data, len(tokens), response.success_count, db)
+        # Log the alert to Realtime Database
+        log_alert(alerts, sensor_data, len(tokens), response.success_count)
         
     except Exception as e:
         print(f"Error sending notifications: {e}")
 
-def log_alert(alerts, sensor_data, sent_count, success_count, db):
-    """Log alert to Firestore for history"""
+def log_alert(alerts, sensor_data, sent_count, success_count):
+    """Log alert to Realtime Database for history"""
     try:
-        alert_ref = db.collection('alerts').document()
+        alert_ref = db.reference('alerts').push()
         alert_ref.set({
             'alerts': alerts,
             'sensor_data': sensor_data,
             'sent_to_count': sent_count,
             'success_count': success_count,
-            'created_at': firestore.SERVER_TIMESTAMP,
+            'created_at': {'.sv': 'timestamp'},  # Firebase server timestamp
             'checked_at': datetime.now().isoformat()
         })
-        print("📝 Alert logged to Firestore")
+        print("Alert logged to Realtime Database")
     except Exception as e:
         print(f"Error logging alert: {e}")
 
@@ -127,8 +132,8 @@ def main():
     print("=== Hydroponic Monitor Started ===")
     
     try:
-        db = initialize_firebase()
-        check_sensor_ranges(db)
+        db_ref = initialize_firebase()
+        check_sensor_ranges(db_ref)
         
     except Exception as e:
         print(f"Monitor failed: {e}")
