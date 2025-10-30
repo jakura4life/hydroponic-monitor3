@@ -1,1 +1,2 @@
 firebase-admin>=7.0.0
+ntplib>=0.4.0

@@ -4,7 +4,8 @@ import json
 import os
 import smtplib
 from email.mime.text import MIMEText
-from datetime import datetime
+from datetime import datetime, timezone
+import ntplib
 
 def initialize_firebase():
     """Initialize Firebase with credentials from environment variable"""
@@ -108,14 +109,28 @@ def send_email_alert(alerts, sensor_data):
     except Exception as e:
         print(f"Error sending email: {e}")
 
+def get_ntp_time():
+    """Get current time from NTP server"""
+    try:
+        client = ntplib.NTPClient()
+        response = client.request('pool.ntp.org', version=3)
+        ntp_time = datetime.fromtimestamp(response.tx_time, tz=timezone.utc)
+        return ntp_time.isoformat()
+    except Exception as e:
+        print(f"Warning: Could not get NTP time: {e}")
+        # Fallback to system time
+        return datetime.now(timezone.utc).isoformat()
+
 def log_alert(alerts, sensor_data, db_ref):
     """Log alert to Realtime Database for history"""
     try:
         alert_ref = db_ref.child('alerts').push()
+        ntp_timestamp = get_ntp_time()
+
         alert_data = {
             'alerts': alerts,
             'sensor_data': sensor_data,
-            'created_at': {'.sv': 'timestamp'},
+            'created_at': ntp_timestamp,
             'checked_at': datetime.now().isoformat()
         }
         alert_ref.set(alert_data)
