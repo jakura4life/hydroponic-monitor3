@@ -20,7 +20,7 @@ def initialize_firebase():
 
 def check_sensor_ranges(db):
     """Check if sensor data is within acceptable ranges"""
-    print(f"🔍 Checking sensor data at {datetime.now()}")
+    print(f"Checking sensor data at {datetime.now()}")
     
     try:
         # Get current sensor data
