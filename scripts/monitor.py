@@ -131,7 +131,7 @@ def log_alert(alerts, sensor_data, db_ref):
             'alerts': alerts,
             'sensor_data': sensor_data,
             'created_at': ntp_timestamp,
-            'checked_at': datetime.now().isoformat()
+            'checked_at': int(datetime.now().timestamp())
         }
         alert_ref.set(alert_data)
         print("Alert logged to Realtime Database")

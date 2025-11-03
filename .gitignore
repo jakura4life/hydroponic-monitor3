@@ -1,2 +1,5 @@
 service_account_file.json
+newServiceAccount.json
 .venv/
+
+src/arduinoIDE/ESP8266_Arduino/8826/secrets.h
