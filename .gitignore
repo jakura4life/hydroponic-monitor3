@@ -1,10 +1,14 @@
 .venv/
 .vscode/
 
-// secrets
+#// secrets
 src/arduinoIDE/ESP8266_Arduino/8826/secrets.h
 
-/// root
+#// scripts
+scripts/monitor_backup.py
+
+#// root
 newServiceAccount.json
 service_account_file.json
-
+.secrets
+firebase_base64.txt

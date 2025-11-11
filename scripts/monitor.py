@@ -43,10 +43,10 @@ def get_active_alerts(db_ref):
         # Default structure if it doesn't exist
         if not active_alerts:
             active_alerts = {
-                'temperature_high': False,
-                'temperature_low': False,
-                'humidity_high': False,
-                'humidity_low': False
+                'temperature_alert': False,
+                'humidity_alert': False,
+                'ph_alert': False,
+                'tds_alert': False,
             }
             # Initialize the structure
             alerts_ref.set(active_alerts)
@@ -59,18 +59,19 @@ def get_active_alerts(db_ref):
         print(f"Error reading active alerts: {e}")
         # Return default structure on error
         return {
-            'temperature_high': False,
-            'temperature_low': False,
-            'humidity_high': False,
-            'humidity_low': False
+            'temperature_alert': False,
+            'humidity_alert': False,
+            'ph_alert': False,
+            'tds_alert': False,
         }
 
 def update_alert_state(db_ref, alert_type, is_active):
     """Update a specific alert state in Firebase"""
     try:
         db_ref.child('alerts').child('active').child(alert_type).set(is_active)
-        db_ref.child('alerts').child('lastUpdated').set({
-            '.sv': 'timestamp'
+        db_ref.child('alerts').child('active').child('lastUpdated').set({
+        'server_timestamp': { '.sv': 'timestamp' },  # Firebase server time
+        'formatted': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         })
         print(f"Updated {alert_type} to {is_active}")
     except Exception as e:
@@ -122,6 +123,160 @@ def send_email_alert(alerts, sensor_data, alert_types):
         print(f"Error sending email: {str(e)}")
         return False
 
+def format_duration(seconds):
+    """Format duration in seconds to human readable format"""
+    if seconds is None:
+        return "Unknown"
+    
+    if seconds < 60:
+        return f"{seconds} seconds"
+    elif seconds < 3600:
+        minutes = seconds // 60
+        return f"{minutes} minutes"
+    elif seconds < 86400:
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        return f"{hours}h {minutes}m"
+    else:
+        days = seconds // 86400
+        hours = (seconds % 86400) // 3600
+        return f"{days}d {hours}h"
+
+def get_alerted_sensor_data(sensor_data, alert_type):
+    """Extract only the relevant sensor data for the specific alert"""
+    alerted_val = None  # Initialize with default value
+    
+    if alert_type == 'temperature_alert' and 'temperature' in sensor_data:
+        alerted_val = sensor_data['temperature']
+    elif alert_type == 'humidity_alert' and 'humidity' in sensor_data:
+        alerted_val = sensor_data['humidity']
+    elif alert_type == 'ph_alert' and 'ph' in sensor_data:
+        alerted_val = sensor_data['ph']
+    elif alert_type == 'tds_alert' and 'tds' in sensor_data:
+        alerted_val = sensor_data['tds']
+    
+    return alerted_val
+
+def log_alert_event(db_ref, event_type, alert_types, sensor_data):
+    """Log alert activation and resolution events with duration tracking"""
+    try:
+        ntp_timestamp = get_ntp_time()
+        
+        if event_type == 'activated':
+            # Log activation and store start time
+            for alert_type in alert_types:
+                # Get only the relevant sensor data for this alert
+                alerted_val = get_alerted_sensor_data(sensor_data, alert_type)
+                
+                event_ref = db_ref.child('alerts').child('activated').push()
+                event_data = {
+                    'alert_type': alert_type,
+                    'sensor_val': alerted_val,  # Only store alerted variable
+                    'start_times' : ntp_timestamp,
+                }
+                event_ref.set(event_data)
+                
+                # Store start time for duration calculation later
+                # db_ref.child('alerts').child('start_times').child(alert_type).set(ntp_timestamp)
+            
+            print(f"Alert activation logged: {alert_types}")
+            
+        elif event_type == 'resolved':
+            # Calculate duration for each resolved alert
+            for alert_type in alert_types:
+                # Get only the relevant sensor data for this alert
+                alerted_val = get_alerted_sensor_data(sensor_data, alert_type)
+                
+                # Get the start time from the activated alert entry
+                activated_alerts = db_ref.child('alerts').child('activated').get() or {}
+                start_time = None
+                alert_key_to_delete = None
+                
+                # Find the matching activated alert and get its timestamp
+                for alert_key, alert_data in activated_alerts.items():
+                    if alert_data.get('alert_type') == alert_type:
+                        start_time = alert_data.get('start_times')
+                        alert_key_to_delete = alert_key
+                        break
+                
+                if start_time:
+                    # Calculate duration
+                    try:
+                        start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                        end_dt = datetime.fromisoformat(ntp_timestamp.replace('Z', '+00:00'))
+                        duration_seconds = int((end_dt - start_dt).total_seconds())
+                        
+                        # Format duration for readability
+                        duration_str = format_duration(duration_seconds)
+                    except Exception as e:
+                        print(f"Error calculating duration: {e}")
+                        duration_seconds = None
+                        duration_str = "Unknown"
+                    
+                    # Log resolution with duration
+                    event_ref = db_ref.child('alerts').child('resolved').push()
+                    
+                    # Create event data for resolved alert
+                    event_data = {
+                        'alert_type': alert_type,
+                        'sensor_val': alerted_val,  # Only store alerted variable
+                        'activated_at': start_time,
+                        'resolved_at': ntp_timestamp,
+                        'duration_seconds': duration_seconds,
+                        'duration_readable': duration_str,
+                    }
+
+                    event_ref.set(event_data)
+                    
+                    print(f"Alert resolution logged: {alert_type} (duration: {duration_str})")
+                else:
+                    # No start time found, log without duration
+                    event_ref = db_ref.child('alerts').child('resolved').push()
+                    event_data = {
+                        'alert_type': alert_type,
+                        'sensor_val': alerted_val,  # Only store alerted variable
+                        'resolved_at': ntp_timestamp,
+                        'duration_seconds': None,
+                        'duration_readable': 'Unknown',
+                    }
+                    event_ref.set(event_data)
+                    print(f"Alert resolution logged (no start time): {alert_type}")
+                
+                if alert_key_to_delete:
+                    db_ref.child('alerts').child('activated').child(alert_key_to_delete).delete()
+                    print(f"✅ Deleted resolved alert from activated: {alert_key_to_delete}")
+                else:
+                    # Fallback: try to delete by alert_type
+                    delete_from_activated(alert_type, db_ref)
+            
+    except Exception as e:
+        print(f"Error logging alert event: {e}")
+
+def delete_from_activated(alert_type, db_ref):
+    """Find and delete the matching alert from activated directory"""
+    try:
+        activated_ref = db_ref.child('alerts').child('activated')
+        activated_alerts = activated_ref.get()
+        
+        if activated_alerts:
+            for alert_key, alert_data in activated_alerts.items():
+                # Check if alert_type matches
+                if alert_data.get('alert_type') == alert_type:
+                    # For more precise matching, you can also check sensor data
+                    # But since we're deleting by alert_type, this should be sufficient
+                    
+                    # Delete the matching alert
+                    activated_ref.child(alert_key).delete()
+                    print(f"✅ Deleted resolved alert from activated: {alert_key}")
+                    return True
+        
+        print(f"⚠️  No matching alert found in activated directory for: {alert_type}")
+        return False
+        
+    except Exception as e:
+        print(f"❌ Error deleting from activated: {e}")
+        return False
+
 def check_sensor_ranges(db_ref):
     """Check if sensor data is within acceptable ranges"""
     print(f"Checking sensor data at {datetime.now()}")
@@ -146,122 +301,72 @@ def check_sensor_ranges(db_ref):
         # Check temperature
         temperature = sensor_data.get('temperature')
         if temperature is not None:
-            if temperature < 12:
-                alert_type = 'temperature_low'
+            alert_type = 'temperature_alert'
+            if temperature < 12 or temperature > 28:
                 if not active_alerts.get(alert_type, False):
                     # This is a NEW alert
-                    alerts.append(f"Temperature too low: {temperature}C (min: 12C)")
+                    if temperature < 12:
+                        alerts.append(f"Temperature too low: {temperature}C (min: 12C)")
+                    else:
+                        alerts.append(f"Temperature too high: {temperature}C (max: 28C)")
                     new_alert_types.append(alert_type)
-                # Update state to active
-                update_alert_state(db_ref, alert_type, True)
-            elif temperature > 28:
-                alert_type = 'temperature_high'
-                if not active_alerts.get(alert_type, False):
-                    # This is a NEW alert
-                    alerts.append(f"Temperature too high: {temperature}C (max: 30C)")
-                    new_alert_types.append(alert_type)
+                    # Log activation
+                    log_alert_event(db_ref, 'activated', [alert_type], sensor_data)
                 # Update state to active
                 update_alert_state(db_ref, alert_type, True)
             else:
                 # Temperature is normal, check if we need to resolve an alert
-                for temp_alert in ['temperature_low', 'temperature_high']:
-                    if active_alerts.get(temp_alert, False):
-                        resolved_alert_types.append(temp_alert)
-                        update_alert_state(db_ref, temp_alert, False)
+                if active_alerts.get(alert_type, False):
+                    resolved_alert_types.append(alert_type)
+                    update_alert_state(db_ref, alert_type, False)
         
         # Check humidity
         humidity = sensor_data.get('humidity')
         if humidity is not None:
-            if humidity < 50:
-                alert_type = 'humidity_low'
+            alert_type = 'humidity_alert'
+            if humidity < 50 or humidity > 80:
                 if not active_alerts.get(alert_type, False):
                     # This is a NEW alert
-                    alerts.append(f"Humidity too low: {humidity}% (min: 50%)")
+                    if humidity < 50:
+                        alerts.append(f"Humidity too low: {humidity}% (min: 50%)")
+                    else:
+                        alerts.append(f"Humidity too high: {humidity}% (max: 80%)")
                     new_alert_types.append(alert_type)
-                # Update state to active
-                update_alert_state(db_ref, alert_type, True)
-            elif humidity > 80:
-                alert_type = 'humidity_high'
-                if not active_alerts.get(alert_type, False):
-                    # This is a NEW alert
-                    alerts.append(f"Humidity too high: {humidity}% (max: 95%)")
-                    new_alert_types.append(alert_type)
+                    # Log activation
+                    log_alert_event(db_ref, 'activated', [alert_type], sensor_data)
                 # Update state to active
                 update_alert_state(db_ref, alert_type, True)
             else:
                 # Humidity is normal, check if we need to resolve an alert
-                for humid_alert in ['humidity_low', 'humidity_high']:
-                    if active_alerts.get(humid_alert, False):
-                        resolved_alert_types.append(humid_alert)
-                        update_alert_state(db_ref, humid_alert, False)
+                if active_alerts.get(alert_type, False):
+                    resolved_alert_types.append(alert_type)
+                    update_alert_state(db_ref, alert_type, False)
+        
+        # Log resolution events if any
+        if resolved_alert_types:
+            log_alert_event(db_ref, 'resolved', resolved_alert_types, sensor_data)
+            print(f"Resolved alerts: {resolved_alert_types}")
         
         # Send notifications only for NEW alerts
         if alerts and new_alert_types:
             print(f"NEW alerts detected: {alerts}")
             send_email_alert(alerts, sensor_data, new_alert_types)
-            log_alert(alerts, sensor_data, db_ref, alert_types=new_alert_types, is_new=True)
         elif any(active_alerts.values()):
             # There are ongoing alerts but no new ones
             ongoing_alerts = []
             for alert_type, is_active in active_alerts.items():
                 if is_active:
-                    if alert_type == 'temperature_low':
-                        ongoing_alerts.append(f"Temperature too low: {temperature}C")
-                    elif alert_type == 'temperature_high':
-                        ongoing_alerts.append(f"Temperature too high: {temperature}C")
-                    elif alert_type == 'humidity_low':
-                        ongoing_alerts.append(f"Humidity too low: {humidity}%")
-                    elif alert_type == 'humidity_high':
-                        ongoing_alerts.append(f"Humidity too high: {humidity}%")
+                    if alert_type == 'temperature_alert':
+                        ongoing_alerts.append(f"Temperature out of range: {temperature}C")
+                    elif alert_type == 'humidity_alert':
+                        ongoing_alerts.append(f"Humidity out of range: {humidity}%")
             
             print(f"Ongoing alerts (no new notification): {ongoing_alerts}")
-            log_alert(ongoing_alerts, sensor_data, db_ref, alert_types=list(active_alerts.keys()), is_new=False)
         else:
             print("All sensor readings are within normal ranges")
-        
-        # Log resolved alerts
-        if resolved_alert_types:
-            print(f"Resolved alerts: {resolved_alert_types}")
-            log_resolved_alert(resolved_alert_types, sensor_data, db_ref)
             
     except Exception as e:
         print(f"Error checking sensor data: {e}")
-
-def log_alert(alerts, sensor_data, db_ref, alert_types, is_new=True):
-    """Log alert to Realtime Database for history"""
-    try:
-        alert_ref = db_ref.child('alerts').child('history').push()
-        ntp_timestamp = get_ntp_time()
-        
-        alert_data = {
-            'alerts': alerts,
-            'alert_types': alert_types,
-            'sensor_data': sensor_data,
-            'created_at': ntp_timestamp,
-            'checked_at': datetime.now().isoformat(),
-            'timestamp_source': 'ntp',
-            'is_new_alert': is_new,
-            'alert_status': 'new' if is_new else 'ongoing'
-        }
-        alert_ref.set(alert_data)
-        print(f"Alert logged to history (new: {is_new})")
-    except Exception as e:
-        print(f"Error logging alert: {e}")
-
-def log_resolved_alert(resolved_types, sensor_data, db_ref):
-    """Log resolved alerts to database"""
-    try:
-        resolved_ref = db_ref.child('alerts').child('resolved').push()
-        resolved_data = {
-            'resolved_alert_types': resolved_types,
-            'sensor_data': sensor_data,
-            'resolved_at': {'.sv': 'timestamp'},
-            'checked_at': datetime.now().isoformat()
-        }
-        resolved_ref.set(resolved_data)
-        print("Resolved alerts logged to database")
-    except Exception as e:
-        print(f"Error logging resolved alerts: {e}")
 
 def main():
     """Main monitoring function"""
