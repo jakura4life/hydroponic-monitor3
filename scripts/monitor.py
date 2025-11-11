@@ -18,7 +18,7 @@ def initialize_firebase():
     
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred, {
-            'databaseURL': 'https://hydroponic-7fd3b-default-rtdb.firebaseio.com/'
+            'databaseURL': 'https://hydroponic-7fd3b-default-rtdb.europe-west1.firebasedatabase.app/'
         })
     
     return db.reference()
