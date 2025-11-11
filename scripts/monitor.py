@@ -3,7 +3,7 @@ from firebase_admin import credentials, db
 import json
 import os
 import smtplib
-from email.mime.text import MimeText
+from email.mime.text import MIMEText
 from datetime import datetime, timezone
 import ntplib
 
@@ -104,7 +104,7 @@ def send_email_alert(alerts, sensor_data, alert_types):
         text_content += f"Timestamp: {sensor_data.get('timestamp', 'N/A')}\n"
         text_content += "\nThis is a NEW alert from your Hydroponic Monitoring System."
         
-        msg = MimeText(text_content, 'plain')
+        msg = MIMEText(text_content, 'plain')
         msg['Subject'] = subject
         msg['From'] = email_from
         msg['To'] = email_to
