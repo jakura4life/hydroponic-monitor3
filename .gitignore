@@ -1,4 +1,5 @@
 .venv/
+.vscode/
 
 // secrets
 src/arduinoIDE/ESP8266_Arduino/8826/secrets.h
