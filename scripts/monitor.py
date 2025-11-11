@@ -154,7 +154,7 @@ def check_sensor_ranges(db_ref):
                     new_alert_types.append(alert_type)
                 # Update state to active
                 update_alert_state(db_ref, alert_type, True)
-            elif temperature > 30:
+            elif temperature > 28:
                 alert_type = 'temperature_high'
                 if not active_alerts.get(alert_type, False):
                     # This is a NEW alert
@@ -180,7 +180,7 @@ def check_sensor_ranges(db_ref):
                     new_alert_types.append(alert_type)
                 # Update state to active
                 update_alert_state(db_ref, alert_type, True)
-            elif humidity > 95:
+            elif humidity > 80:
                 alert_type = 'humidity_high'
                 if not active_alerts.get(alert_type, False):
                     # This is a NEW alert
