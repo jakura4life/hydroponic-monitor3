@@ -3,12 +3,18 @@
 
 #// secrets
 src/arduinoIDE/ESP8266_Arduino/8826/secrets.h
+src/arduinoIDE/ESP8266_Arduino/8826V2/secrets.h
 
 #// scripts
 scripts/monitor_backup.py
 
 #// root
-newServiceAccount.json
-service_account_file.json
-.secrets
-firebase_base64.txt
+serviceAccount.json
+.secrets.txt
+src/arduinoIDE/ESP32
+src/arduinoIDE/ESP32/compress/secrets.h
+src/arduinoIDE/ESP32/eduroam/secrets.h
+src/arduinoIDE/ESP8266_Arduino/ESP32_test/secrets.h
+src/arduinoIDE/Main/ESP32V1/secrets.h
+src/arduinoIDE/ESP32/WPA2_Enter
+src/arduinoIDE/ESP8266
