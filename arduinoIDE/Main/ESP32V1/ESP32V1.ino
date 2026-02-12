@@ -19,12 +19,12 @@ functionality.
 Definitions
 ----------*/
 // ASK4
-// #define WIFI_SSID "ASK4 Wireless"
-// #define WIFI_PASSWORD ""
+#define WIFI_SSID "ASK4 Wireless"
+#define WIFI_PASSWORD ""
 
 // hotspot
-#define WIFI_SSID HOTSPOT_SSID
-#define WIFI_PASSWORD HOTSPOT_PASSWORD
+// #define WIFI_SSID HOTSPOT_SSID
+// #define WIFI_PASSWORD HOTSPOT_PASSWORD
 
 // Eduroam 
 // #define EDU_SSID "eduroam"
