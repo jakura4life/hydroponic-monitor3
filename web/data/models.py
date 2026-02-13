@@ -1,24 +1,17 @@
-from django.db import models
+from django.http import JsonResponse
+from .services.firebase.firebase_service import fetch_history_from_firebase
+from .services.redis.redis_cache import get_cached_hourly_ph, cache_hourly_ph
+from .data_process.hourly import calculate_hourly_average
 
+def hourly_ph_model():
 
-class SensorReading(models.Model):
-    epoch = models.BigIntegerField(unique=True) 
+    cached = get_cached_hourly_ph()
+    if cached:
+        return cached
 
-    ph_raw = models.FloatField()
-    ph_clean = models.FloatField(
-        null=True,
-        blank=True
-        )
-    tds_raw = models.IntegerField()
-    tds_clean = models.IntegerField(
-        null=True,
-        blank=True
-        )
-    temperature = models.FloatField()
-    humidity = models.IntegerField()
-    
-    datetime = models.CharField(50)
-    
-    class Meta:
-        ordering = ["epoch"]
-        indexes = [models.Index(fields=["epoch"])]
+    history = fetch_history_from_firebase()
+    hourly_avg = calculate_hourly_average(history)
+
+    cache_hourly_ph(hourly_avg)
+
+    return cached

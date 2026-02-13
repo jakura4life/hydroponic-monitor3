@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
-from services.firebase_service import listen_to_history, listen_to_current
-from services.firebase_service import current_stream_handler
+from services.firebase.firebase_service import listen_to_current
+from services.firebase.handler import current_stream_handler
 
 
 class Command(BaseCommand):
