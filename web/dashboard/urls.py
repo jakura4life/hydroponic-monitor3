@@ -1,6 +1,8 @@
 from django.urls import path
-from . import views
+from dashboard import views
 
 urlpatterns = [
-    # path("", views.display_dashboard, name="dashboard"),
-]
+    path("hourly_history/", views.hourly_view, name="hourly_page"),
+    path("current/", views.current_view , name= "current_page"),
+    path("api/current/", views.current_data_api , name= "current_api"),
+    ]

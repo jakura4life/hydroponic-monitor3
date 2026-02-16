@@ -1,0 +1,43 @@
+services:
+  web:
+      build: .
+      container_name: django_app
+      command: python manage.py runserver 0.0.0.0:8000
+      volumes:
+        - .:/app
+      ports:
+        - "8000:8000"
+      environment:
+        - DEBUG=1
+        - REDIS_HOST=redis
+        - REDIS_PORT=6379
+        - FIREBASE_CREDENTIALS_JSON=${FIREBASE_CREDENTIALS_JSON}
+        - FIREBASE_DB_URL=${FIREBASE_DB_URL}
+      depends_on:
+        - redis
+      networks:
+        - django_network
+
+  redis:
+    image: redis:8.4.1
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - django_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+volumes:
+  redis_data:
+
+networks:
+  django_network:
+    driver: bridge

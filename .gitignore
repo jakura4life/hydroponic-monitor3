@@ -21,6 +21,7 @@ arduinoIDE/ESP8266
 
 #// backend // web project
 web/serviceAccount.json
+web/data/services/firebase/serviceAccount.json
 
 # arduinoIDE/ESP32/compress/secrets.h
 # arduinoIDE/ESP32/eduroam/secrets.h
@@ -28,3 +29,7 @@ web/serviceAccount.json
 # arduinoIDE/ESP8266_Arduino/8826V2/secrets.h
 # arduinoIDE/ESP8266_Arduino/ESP32_test/secrets.h
 # arduinoIDE/Main/ESP32V1/secrets.h
+
+.env
+*.env
+*serviceAccount.json
