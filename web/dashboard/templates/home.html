@@ -1,22 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Hydroponic Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body class="bg-gray-50 p-6">
+{% extends "base.html" %}
+{% block title %}Home - Hydroponic Dashboard{% endblock %}
 
-<div class="max-w-4xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4">Hydroponic Dashboard</h1>
+{% block extra_css %}
+<!-- Tailwind + optional custom CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto p-6" x-data="{ alertMessage: '', showAlert: false }">
+
+    <h1 class="text-3xl font-bold mb-6">Hydroponic Dashboard</h1>
 
     <!-- Alerts -->
-    <div id="alert" class="hidden p-4 mb-4 rounded text-white" x-data x-text="" ></div>
+    <div 
+        x-show="showAlert"
+        x-text="alertMessage"
+        class="p-4 mb-4 rounded text-white bg-red-500"
+        style="display:none;"
+    ></div>
 
-    <!-- Sensor Cards -->
-    <div class="grid grid-cols-2 gap-4 mb-6">
+    <!-- Current Sensor Readings -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div class="p-4 bg-white rounded shadow">
             <h2 class="font-semibold">pH</h2>
             <p class="text-xl" id="ph">--</p>
@@ -38,19 +42,24 @@
     <!-- Last update -->
     <p class="mb-6">Last updated: <span id="updated">--</span></p>
 
-    <!-- Chart -->
+    <!-- Hourly Chart -->
     <canvas id="hourlyChart" class="bg-white rounded shadow p-4"></canvas>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
     let hourlyChart;
 
     async function fetchCurrentData() {
         try {
-            const response = await fetch("/dashboard/api/current/");
+            const response = await fetch("{% url 'current_api' %}");
             const data = await response.json();
 
-            // Update sensor cards
             document.getElementById("ph").textContent = data.ph;
             document.getElementById("tds").textContent = data.tds;
             document.getElementById("temp").textContent = data.airTemp;
@@ -58,13 +67,15 @@
             document.getElementById("updated").textContent = new Date().toLocaleTimeString();
 
             // Alert logic
-            const alertBox = document.getElementById("alert");
+            const alertEl = document.querySelector('[x-data]').__x.$data;
             if (data.ph > 7) {
-                alertBox.textContent = "⚠ pH high — adjust nutrient solution";
-                alertBox.className = "p-4 mb-4 rounded bg-red-500 text-white";
-                alertBox.classList.remove("hidden");
+                alertEl.alertMessage = "⚠ pH high — adjust nutrient solution";
+                alertEl.showAlert = true;
+            } else if (data.ph < 5.5) {
+                alertEl.alertMessage = "⚠ pH low — adjust nutrient solution";
+                alertEl.showAlert = true;
             } else {
-                alertBox.classList.add("hidden");
+                alertEl.showAlert = false;
             }
 
         } catch (err) {
@@ -74,7 +85,7 @@
 
     async function fetchHourlyData() {
         try {
-            const response = await fetch("/dashboard/api/hourly/");
+            const response = await fetch("{% url 'hourly_api' %}");
             const hourlyData = await response.json();
 
             const labels = hourlyData.map(h => new Date(h.hour).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
@@ -119,10 +130,8 @@
     fetchCurrentData();
     fetchHourlyData();
 
-    // Refresh every 60s
+    // Refresh every 60 seconds
     setInterval(fetchCurrentData, 60000);
-    setInterval(fetchHourlyData, 60000);
-
+    setInterval(fetchHourlyData, 360000);
 </script>
-</body>
-</html>
+{% endblock %}
