@@ -16,7 +16,9 @@ def hourly_view(request):
     return JsonResponse([h.model_dump() for h in hourly_data], safe=False)
 
 def hourly_data_api(request):
-    data = get_hourly_data()
+    range_label = request.GET.get("range","1d")
+
+    data = get_hourly_data(range_label)
     if not data:
         return JsonResponse({"error": "No data yet"}, status=404)
 

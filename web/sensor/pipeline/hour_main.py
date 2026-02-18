@@ -8,7 +8,7 @@ from sensor.repository.firebase_service import fetch_history_from_firebase
 def process_hourly(startepoch=None):
     ema = EMASmoother()
 
-    readings = fetch_history_from_firebase()
+    readings = fetch_history_from_firebase(startepoch)
     normalize_list = []
 
     for reading in readings:

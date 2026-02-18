@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from django.db import models
-from datetime import datetime
+from datetime import datetime,timezone
 
 class SensorReading(BaseModel):
     epoch: int
@@ -43,6 +43,24 @@ class HourlyAggregate(BaseModel):
     avg_temp: float
     avg_humidity: float
 
+    @classmethod
+    def from_epoch(cls, hour, avg_ph, avg_tds, avg_temp, avg_humidity):
+        # if isinstance(hour_or_epoch, int):
+        #     dt = datetime.fromtimestamp(hour_or_epoch, tz=timezone.utc)
+        # elif isinstance(hour_or_epoch, datetime):
+        #     # ensure UTC
+        #     dt = hour_or_epoch.astimezone(timezone.utc)
+        # else:
+        #     raise TypeError(f"Invalid type for hour_or_epoch: {type(hour_or_epoch)}")
+        dt = hour
+        return cls(
+            hour=dt,
+            avg_ph=avg_ph,
+            avg_tds=avg_tds,
+            avg_temp=avg_temp,
+            avg_humidity=avg_humidity
+        )
+    
     def generate_feedback(hourly):
         messages = []
 

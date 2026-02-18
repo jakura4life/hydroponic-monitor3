@@ -25,23 +25,38 @@ for i in range(10):
         print("Waiting for Redis...")
         time.sleep(2)
 
+def _hourly_cache_key(range_label: str):
+    return f"sensor:hourly:{range_label}"
 
+def seconds_until_next_hour():
+    now = int(time.time())
+    return 3600 - (now % 3600)
 
+VALID_RANGES = {"all", "7d", "1d", "12h"}
 #---- hourly ------
-def cache_hourly(hourly: list[HourlyAggregate]):
+def cache_hourly(hourly: list[HourlyAggregate], range_label: str):
+    if range_label not in VALID_RANGES:
+        raise ValueError(f"Invalid range: {range_label}")
+
     payload = [h.model_dump(mode="json") for h in hourly]
 
-    r.set("sensor:hourly", json.dumps(payload), ex=3600)
+    key = _hourly_cache_key(range_label)
+    expiry = seconds_until_next_hour()
 
-    print("[CACHE] Hourly data cached")
+    r.set(key, json.dumps(payload), ex=expiry)
 
-def get_cached_hourly() -> list[HourlyAggregate] | None:
-    data = r.get("sensor:hourly")
-    # print("[CACHE RAW]", data)
+    print(f"[CACHE] Hourly data cached ({range_label})")
 
+def get_cached_hourly(range_label: str) -> list[HourlyAggregate] | None:
+    if range_label not in VALID_RANGES:
+        raise ValueError(f"Invalid range: {range_label}")
+
+    key = _hourly_cache_key(range_label)
+
+    data = r.get(key)
     if not data:
         return None
 
-    raw_list = json.loads(data) 
-
-    return [HourlyAggregate(**item) for item in raw_list]
+    raw_list = json.loads(data)
+    print(raw_list)
+    return [HourlyAggregate.from_epoch(**item) for item in raw_list]

@@ -3,135 +3,204 @@
 
 {% block extra_css %}
 <!-- Tailwind + optional custom CSS -->
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 {% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto p-6" x-data="{ alertMessage: '', showAlert: false }">
+<div class="max-w-6xl mx-auto p-6">
 
     <h1 class="text-3xl font-bold mb-6">Hydroponic Dashboard</h1>
 
-    <!-- Alerts -->
-    <div 
-        x-show="showAlert"
-        x-text="alertMessage"
-        class="p-4 mb-4 rounded text-white bg-red-500"
-        style="display:none;"
-    ></div>
+    <!-- Realtime Data (2 columns fluid) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
 
-    <!-- Current Sensor Readings -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div class="p-4 bg-white rounded shadow">
-            <h2 class="font-semibold">pH</h2>
-            <p class="text-xl" id="ph">--</p>
+        <div class="bg-white p-6 rounded shadow">
+            <h2 class="text-lg font-semibold mb-2">pH</h2>
+            <p class="text-2xl" id="ph">--</p>
         </div>
-        <div class="p-4 bg-white rounded shadow">
-            <h2 class="font-semibold">TDS (ppm)</h2>
-            <p class="text-xl" id="tds">--</p>
+
+        <div class="bg-white p-6 rounded shadow">
+            <h2 class="text-lg font-semibold mb-2">TDS (ppm)</h2>
+            <p class="text-2xl" id="tds">--</p>
         </div>
-        <div class="p-4 bg-white rounded shadow">
-            <h2 class="font-semibold">Air Temp (°C)</h2>
-            <p class="text-xl" id="temp">--</p>
+
+        <div class="bg-white p-6 rounded shadow">
+            <h2 class="text-lg font-semibold mb-2">Air Temperature (°C)</h2>
+            <p class="text-2xl" id="temp">--</p>
         </div>
-        <div class="p-4 bg-white rounded shadow">
-            <h2 class="font-semibold">Humidity (%)</h2>
-            <p class="text-xl" id="humidity">--</p>
+
+        <div class="bg-white p-6 rounded shadow">
+            <h2 class="text-lg font-semibold mb-2">Humidity (%)</h2>
+            <p class="text-2xl" id="humidity">--</p>
         </div>
+
     </div>
 
-    <!-- Last update -->
-    <p class="mb-6">Last updated: <span id="updated">--</span></p>
+    <!-- Graphs Section -->
+    <div class="space-y-8">
 
-    <!-- Hourly Chart -->
-    <canvas id="hourlyChart" class="bg-white rounded shadow p-4"></canvas>
+        <!-- <div class="bg-white p-6 rounded shadow">
+            <h2 class="text-x1 font-semibold mb-4">Last 24 Hours Trend</h2>
+            <canvas id="combineChart"></canvas>
+        </div> -->
+
+        <div class="bg-white p-6 rounded shadow">
+            <h2 class="text-xl font-semibold mb-4">pH Trend</h2>
+            <canvas id="phChart"></canvas>
+        </div>
+
+        <div class="bg-white p-6 rounded shadow">
+            <h2 class="text-xl font-semibold mb-4">TDS Trend</h2>
+            <canvas id="tdsChart"></canvas>
+        </div>
+
+        <div class="bg-white p-6 rounded shadow">
+            <h2 class="text-xl font-semibold mb-4">Temperature Trend</h2>
+            <canvas id="tempChart"></canvas>
+        </div>
+
+        <div class="bg-white p-6 rounded shadow">
+            <h2 class="text-xl font-semibold mb-4">Humidity Trend</h2>
+            <canvas id="humidityChart"></canvas>
+        </div>
+
+    </div>
 
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 <script>
-    let hourlyChart;
-
     async function fetchCurrentData() {
         try {
             const response = await fetch("{% url 'current_api' %}");
             const data = await response.json();
 
-            document.getElementById("ph").textContent = data.ph;
-            document.getElementById("tds").textContent = data.tds;
-            document.getElementById("temp").textContent = data.airTemp;
-            document.getElementById("humidity").textContent = data.humidity;
-            document.getElementById("updated").textContent = new Date().toLocaleTimeString();
-
-            // Alert logic
-            const alertEl = document.querySelector('[x-data]').__x.$data;
-            if (data.ph > 7) {
-                alertEl.alertMessage = "⚠ pH high — adjust nutrient solution";
-                alertEl.showAlert = true;
-            } else if (data.ph < 5.5) {
-                alertEl.alertMessage = "⚠ pH low — adjust nutrient solution";
-                alertEl.showAlert = true;
-            } else {
-                alertEl.showAlert = false;
-            }
+            document.getElementById("ph").textContent = data.ph ? data.ph.toFixed(2) : "--";
+            document.getElementById("tds").textContent = data.tds || "--";
+            document.getElementById("temp").textContent = data.airTemp ? data.airTemp.toFixed(1) : "--";
+            document.getElementById("humidity").textContent = data.humidity ? data.humidity.toFixed(1) : "--";
 
         } catch (err) {
             console.error("Fetch error:", err);
         }
     }
 
-    async function fetchHourlyData() {
+    let phChart, tdsChart, tempChart, humidityChart;
+
+    function createTimeChart(ctx, label, data, color) {
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets:[{
+                    label: label,
+                    data: data,
+                    borderColor: color,
+                    backgroundColor: color + "33",
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend : {display: true},
+                    tooltip : {mode: 'index', intersect: false}
+                },
+                scales : {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'hour',
+                            tooltipFormat: 'MM d, HH:mm',
+                            displayFormats: {
+                                hour: 'HH:mm'
+                            }
+                        },
+                        title: { display: true, text: 'Time' }
+                    },
+                    y: {
+                        title: { display: true, text: label },
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    }
+
+    async function  fetchHourlyData(range = "1d") {
         try {
-            const response = await fetch("{% url 'hourly_api' %}");
+            const response = await fetch (`/api/hourly_history/?range=${range}`);
             const hourlyData = await response.json();
 
-            const labels = hourlyData.map(h => new Date(h.hour).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
-            const phValues = hourlyData.map(h => h.avg_ph);
-            const tdsValues = hourlyData.map(h => h.avg_tds);
-            const tempValues = hourlyData.map(h => h.avg_temp);
-            const humidityValues = hourlyData.map(h => h.avg_humidity);
+            if (!Array.isArray(hourlyData) || hourlyData.length === 0) {
+                console.warn("No data available.");
+                return;
+            }
+            const phPoints = hourlyData.map(h => ({
+                x: new Date(h.hour),
+                y: h.avg_ph
+            }));
 
-            if (!hourlyChart) {
-                hourlyChart = new Chart(document.getElementById("hourlyChart"), {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {label: 'pH', data: phValues, borderColor: 'blue', fill: false},
-                            {label: 'TDS', data: tdsValues, borderColor: 'green', fill: false},
-                            {label: 'Temp', data: tempValues, borderColor: 'orange', fill: false},
-                            {label: 'Humidity', data: humidityValues, borderColor: 'purple', fill: false},
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { position: 'top' } },
-                        scales: { y: { beginAtZero: false } }
-                    }
-                });
+            const tdsPoints = hourlyData.map(h => ({
+                x: new Date(h.hour),
+                y: h.avg_tds
+            }));
+
+            const tempPoints = hourlyData.map(h => ({
+                x: new Date(h.hour),
+                y: h.avg_temp
+            }));
+
+            const humidityPoints = hourlyData.map(h => ({
+                x: new Date(h.hour),
+                y: h.avg_humidity
+            }));
+
+            if (!phChart) {
+                // combineChart = createTimeChart(dcoument.getElementById("combineChart"), "pH", phPoints, );
+
+                // phChart = createTimeChart(document.getElementById("combineChart"), "pH", phPoints, "#0d6efd");
+                // tdsChart = createTimeChart(document.getElementById("combineChart"), "TD", tdsPoints, "#198754");
+                // tempChart = createTimeChart(document.getElementById("combineChart"), "Temperature", tempPoints, "#FFC107");
+                // humidityChart = createTimeChart(document.getElementById("combineChart"), "Humidity", humidityPoints, "#FD7E14");
+
+                phChart = createTimeChart(document.getElementById("phChart"), "pH", phPoints, "#0d6efd");
+                tdsChart = createTimeChart(document.getElementById("tdsChart"), "TD", tdsPoints, "#198754");
+                tempChart = createTimeChart(document.getElementById("tempChart"), "Temperature", tempPoints, "#FFC107");
+                humidityChart = createTimeChart(document.getElementById("humidityChart"), "Humidity", humidityPoints, "#FD7E14");
             } else {
-                hourlyChart.data.labels = labels;
-                hourlyChart.data.datasets[0].data = phValues;
-                hourlyChart.data.datasets[1].data = tdsValues;
-                hourlyChart.data.datasets[2].data = tempValues;
-                hourlyChart.data.datasets[3].data = humidityValues;
-                hourlyChart.update();
+                const charts = [phChart,tdsChart,tempChart,humidityChart];
+                // const charts = combineChart
+                const points = [phPoints,tdsPoints,tempPoints,humidityPoints];
+                
+                charts.forEach((chart, i) => {
+                    chart.data.datasets[0].data = points[i];
+                    chart.update();
+                });
             }
 
         } catch (err) {
-            console.error("Hourly fetch error:", err);
+            console.error("Failed to fetch hourly data:", err);
         }
     }
 
-    // Initial load
+    // initial
     fetchCurrentData();
-    fetchHourlyData();
+    fetchHourlyData("all");
 
-    // Refresh every 60 seconds
-    setInterval(fetchCurrentData, 60000);
-    setInterval(fetchHourlyData, 360000);
+    // Refresh periodically
+    setInterval(fetchCurrentData, 60000); //1min
+    setInterval(fetchHourlyData, 3600000); // 1h
+
+
+    // Optional: dynamically change range
+    function changeRange(newRange) {
+        fetchHourlyData(newRange);
+    }
+
 </script>
 {% endblock %}
