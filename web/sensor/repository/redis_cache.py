@@ -58,5 +58,4 @@ def get_cached_hourly(range_label: str) -> list[HourlyAggregate] | None:
         return None
 
     raw_list = json.loads(data)
-    print(raw_list)
     return [HourlyAggregate.from_epoch(**item) for item in raw_list]

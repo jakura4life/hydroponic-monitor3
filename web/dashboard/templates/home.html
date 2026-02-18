@@ -39,12 +39,12 @@
     <!-- Graphs Section -->
     <div class="space-y-8">
 
-        <!-- <div class="bg-white p-6 rounded shadow">
+        <div class="bg-white p-6 rounded shadow">
             <h2 class="text-x1 font-semibold mb-4">Last 24 Hours Trend</h2>
             <canvas id="combineChart"></canvas>
-        </div> -->
+        </div>
 
-        <div class="bg-white p-6 rounded shadow">
+        <!-- <div class="bg-white p-6 rounded shadow">
             <h2 class="text-xl font-semibold mb-4">pH Trend</h2>
             <canvas id="phChart"></canvas>
         </div>
@@ -62,7 +62,7 @@
         <div class="bg-white p-6 rounded shadow">
             <h2 class="text-xl font-semibold mb-4">Humidity Trend</h2>
             <canvas id="humidityChart"></canvas>
-        </div>
+        </div> -->
 
     </div>
 
@@ -88,47 +88,49 @@
         }
     }
 
-    let phChart, tdsChart, tempChart, humidityChart;
+    let combineChart
 
-    function createTimeChart(ctx, label, data, color) {
-        return new Chart(ctx, {
-            type: 'line',
-            data: {
-                datasets:[{
-                    label: label,
-                    data: data,
-                    borderColor: color,
-                    backgroundColor: color + "33",
-                    tension: 0.3,
-                    fill: true,
-                    pointRadius: 2
-                }]
+    function createCombinedChart(ctx, datasets) {
+    return new Chart(ctx, {
+        type: 'line',
+        data: { datasets: datasets },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
             },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend : {display: true},
-                    tooltip : {mode: 'index', intersect: false}
-                },
-                scales : {
-                    x: {
-                        type: 'time',
-                        time: {
-                            unit: 'hour',
-                            tooltipFormat: 'MM d, HH:mm',
-                            displayFormats: {
-                                hour: 'HH:mm'
-                            }
-                        },
-                        title: { display: true, text: 'Time' }
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'hour',
+                        tooltipFormat: 'MMM d, HH:mm'
                     },
-                    y: {
-                        title: { display: true, text: label },
-                        beginAtZero: false
+                    title: { display: true, text: 'Time' }
+                },
+                y: {
+                    type: 'linear',
+                    position: 'left',
+                    title: { display: true, text: 'pH / Temp' }
+                },
+                y1: {
+                    type: 'linear',
+                    position: 'right',
+                    title: { display: true, text: 'TDS / Humidity' },
+                    grid: {
+                        drawOnChartArea: false
                     }
                 }
             }
-        });
+        }
+    });
     }
 
     async function  fetchHourlyData(range = "1d") {
@@ -160,27 +162,62 @@
                 y: h.avg_humidity
             }));
 
-            if (!phChart) {
-                // combineChart = createTimeChart(dcoument.getElementById("combineChart"), "pH", phPoints, );
+            if (!combineChart) {
 
-                // phChart = createTimeChart(document.getElementById("combineChart"), "pH", phPoints, "#0d6efd");
-                // tdsChart = createTimeChart(document.getElementById("combineChart"), "TD", tdsPoints, "#198754");
-                // tempChart = createTimeChart(document.getElementById("combineChart"), "Temperature", tempPoints, "#FFC107");
-                // humidityChart = createTimeChart(document.getElementById("combineChart"), "Humidity", humidityPoints, "#FD7E14");
+                combineChart = createCombinedChart(
+                    document.getElementById("combineChart"),
+                    [
+                        {
+                            label: "pH",
+                            data: phPoints,
+                            borderColor: "#0d6efd",
+                            backgroundColor: "#0d6efd33",
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 2,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: "Temperature (°C)",
+                            data: tempPoints,
+                            borderColor: "#ffc107",
+                            backgroundColor: "#ffc10733",
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 2,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: "Humidity (%)",
+                            data: humidityPoints,
+                            borderColor: "#fd7e14",
+                            backgroundColor: "#fd7e1433",
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 2,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: "TDS (ppm)",
+                            data: tdsPoints,
+                            borderColor: "#198754",
+                            backgroundColor: "#19875433",
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 2,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                );
 
-                phChart = createTimeChart(document.getElementById("phChart"), "pH", phPoints, "#0d6efd");
-                tdsChart = createTimeChart(document.getElementById("tdsChart"), "TD", tdsPoints, "#198754");
-                tempChart = createTimeChart(document.getElementById("tempChart"), "Temperature", tempPoints, "#FFC107");
-                humidityChart = createTimeChart(document.getElementById("humidityChart"), "Humidity", humidityPoints, "#FD7E14");
             } else {
-                const charts = [phChart,tdsChart,tempChart,humidityChart];
-                // const charts = combineChart
-                const points = [phPoints,tdsPoints,tempPoints,humidityPoints];
-                
-                charts.forEach((chart, i) => {
-                    chart.data.datasets[0].data = points[i];
-                    chart.update();
-                });
+
+                combineChart.data.datasets[0].data = phPoints;
+                combineChart.data.datasets[1].data = tempPoints;
+                combineChart.data.datasets[2].data = humidityPoints;
+                combineChart.data.datasets[3].data = tdsPoints;
+
+                combineChart.update();
             }
 
         } catch (err) {
@@ -190,7 +227,7 @@
 
     // initial
     fetchCurrentData();
-    fetchHourlyData("all");
+    fetchHourlyData("7d");
 
     // Refresh periodically
     setInterval(fetchCurrentData, 60000); //1min

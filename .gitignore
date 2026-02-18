@@ -33,3 +33,4 @@ web/data/services/firebase/serviceAccount.json
 .env
 *.env
 *serviceAccount.json
+backup.html
