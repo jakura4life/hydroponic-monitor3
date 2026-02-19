@@ -20,7 +20,7 @@ def hourly_data_api(request):
 
     data = get_hourly_data(range_label)
     if not data:
-        return JsonResponse({"error": "No data yet"}, status=404)
+        return JsonResponse({"error": "No data yet"}, status=200)
 
     payload = [h.model_dump(mode="json") for h in data]
 
@@ -33,7 +33,7 @@ def current_data_api(request):
     reading = get_latest_reading()
 
     if not reading:
-        return JsonResponse({"error": "No data yet"}, status=404)
+        return JsonResponse({"error": "No data yet"}, status=200)
 
     return JsonResponse({
         "ph": reading.ph,

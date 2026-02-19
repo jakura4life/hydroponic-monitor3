@@ -4,12 +4,35 @@
 {% block extra_css %}
 <!-- Tailwind + optional custom CSS -->
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+<style>
+    .trend-chart-wrapper {
+    position: relative;
+    height: 380px; /* adjust to match your design */
+}
+#combinedChart {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+#chartMessage {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #9CA3AF;
+    font-size: 18px;
+    text-align: center;
+    /* width: 80%;
+    max-width: 600px; */
+}
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="max-w-6xl mx-auto p-6">
 
-    <h1 class="text-3xl font-bold mb-6">Hydroponic Dashboard</h1>
+    <h1 class="text-3xl font-bold mb-6">Current Values</h1>
 
     <!-- Realtime Data (2 columns fluid) -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -34,14 +57,39 @@
             <p class="text-2xl" id="humidity">--</p>
         </div>
 
+
+        <div class="flex items-center gap-2">
+            <p class="text-sm font-extralight text-left italic">Last update:</p>
+            <p class="text-sm font-extralight text-left italic" id="lastUpdate"></p>
+        </div>
+
     </div>
+
 
     <!-- Graphs Section -->
     <div class="space-y-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold">Trend</h2>
+
+            <div class="flex gap-2">
+                <button onclick="changeRange('12h')" class="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200">12H</button>
+                <button onclick="changeRange('1d')" class="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200">24H</button>
+                <button onclick="changeRange('3d')" class="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200">3D</button>
+                <button onclick="changeRange('7d')" class="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200">7D</button>
+                <button onclick="changeRange('all')" class="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200">All</button>
+            </div>
+        </div>
+
 
         <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-x1 font-semibold mb-4">Last 24 Hours Trend</h2>
-            <canvas id="combineChart"></canvas>
+            <div class="trend-chart-wrapper">
+                <!-- <h2 class="text-x1 font-semibold mb-4">Trend</h2> -->
+                <canvas id="combineChart"></canvas>
+
+                <div id="chartMessage" class="hidden">
+                     No data available for selected range
+                </div>
+            </div>
         </div>
 
         <!-- <div class="bg-white p-6 rounded shadow">
@@ -72,6 +120,9 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+
 <script>
     async function fetchCurrentData() {
         try {
@@ -82,7 +133,7 @@
             document.getElementById("tds").textContent = data.tds || "--";
             document.getElementById("temp").textContent = data.airTemp ? data.airTemp.toFixed(1) : "--";
             document.getElementById("humidity").textContent = data.humidity ? data.humidity.toFixed(1) : "--";
-
+            document.getElementById("lastUpdate").textContent = data.timestamp ? new Date(data.timestamp).toLocaleString() : '--';
         } catch (err) {
             console.error("Fetch error:", err);
         }
@@ -96,6 +147,7 @@
         data: { datasets: datasets },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             interaction: {
                 mode: 'index',
                 intersect: false
@@ -103,10 +155,38 @@
             plugins: {
                 legend: {
                     display: true,
-                    position: 'top'
-                }
+                    position: 'bottom'
+                },
+                // zoom: {
+                //     pan: {
+                //         enabled: true,
+                //         mode: 'x'
+                //     },
+                //     zoom: {
+                //         wheel: {
+                //             enabled: true
+                //         },
+                //         pinch: {
+                //             emabled: true
+                //         },
+                //         mode: 'x',
+                //         limits: {
+                //             x: {
+                //                 min: 'original',
+                //                 max: 'original',
+                //                 minRange: 5
+                //             },
+                //             y: {
+                //                 min: 0,
+                //                 max: 100,
+                //                 minRange: 5
+                //             }
+                //         }
+                //     }
+                // }
             },
             scales: {
+                // scales need to change when selected on all time.
                 x: {
                     type: 'time',
                     time: {
@@ -139,6 +219,13 @@
             const hourlyData = await response.json();
 
             if (!Array.isArray(hourlyData) || hourlyData.length === 0) {
+
+                document.getElementById("chartMessage").classList.remove("hidden");
+
+                if (combineChart) {
+                combineChart.data.datasets.forEach(ds => ds.data = []);
+                combineChart.update();
+                }
                 console.warn("No data available.");
                 return;
             }
@@ -219,6 +306,8 @@
 
                 combineChart.update();
             }
+            
+            document.getElementById("chartMessage").classList.add("hidden");
 
         } catch (err) {
             console.error("Failed to fetch hourly data:", err);

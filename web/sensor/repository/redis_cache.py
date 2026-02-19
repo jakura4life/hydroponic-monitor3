@@ -32,8 +32,9 @@ def seconds_until_next_hour():
     now = int(time.time())
     return 3600 - (now % 3600)
 
-VALID_RANGES = {"all", "7d", "1d", "12h"}
 #---- hourly ------
+VALID_RANGES = {"all", "7d", "3d", "1d", "12h"}
+
 def cache_hourly(hourly: list[HourlyAggregate], range_label: str):
     if range_label not in VALID_RANGES:
         raise ValueError(f"Invalid range: {range_label}")
