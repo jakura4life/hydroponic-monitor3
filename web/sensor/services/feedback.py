@@ -1,14 +1,47 @@
+from sensor.models import SensorReading
 
-# TODO
-# from sensor.models import HourlyAggregate
+def evaluate_feedback(reading):
+    feedback = {}
 
-# def generate_feedback(hourly: HourlyAggregate):
-#     messages = []
+    ph = reading.get("ph")
+    tds = reading.get("tds")
+    temp = reading.get("airTemp")
+    humidity = reading.get("humidity")
 
-#     if hourly.avg_ph > 7:
-#         messages.append("pH high — adjust nutrient solution")
+    # pH rules (hydroponics typical)
+    if ph is not None:
+        if 5.5 <= ph <= 6.5:
+            feedback["ph_status"] = "good"
+        elif 5.0 <= ph <= 7.0:
+            feedback["ph_status"] = "ok"
+        else:
+            feedback["ph_status"] = "bad"
 
-#     if hourly.avg_temp > 28:
-#         messages.append("High temperature risk")
+    # TDS rules
+    if tds is not None:
+        if 500 <= tds <= 900:
+            feedback["tds_status"] = "good"
+        elif 300 <= tds <= 1200:
+            feedback["tds_status"] = "ok"
+        else:
+            feedback["tds_status"] = "bad"
 
-#     return messages
+    # Temperature rules
+    if temp is not None:
+        if 18 <= temp <= 24:
+            feedback["temp_status"] = "good"
+        elif 15 <= temp <= 30:
+            feedback["temp_status"] = "ok"
+        else:
+            feedback["temp_status"] = "bad"
+
+    # Humidity rules
+    if humidity is not None:
+        if 50 <= humidity <= 70:
+            feedback["humidity_status"] = "good"
+        elif 40 <= humidity <= 80:
+            feedback["humidity_status"] = "ok"
+        else:
+            feedback["humidity_status"] = "bad"
+
+    return feedback

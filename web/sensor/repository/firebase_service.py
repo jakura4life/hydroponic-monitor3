@@ -44,30 +44,3 @@ def listen_to_current(callback):
 
     ref = db.reference("sensorData/current")
     return ref.listen(wrapper)
-
-
-
-# # Storing under new directory on DB
-# def store_clean_history(epoch, payload):
-#     ref = db.reference("history_clean")
-#     ref.child(str(epoch)).set(payload)
-#     print("[FIREBASE WRITE] Storing clean values.")
-
-# ## comparison
-# def compare_last_stored(current_epoch):
-#     last_epoch = get_latest_clean_history_epoch_from_firebase()
-#     if last_epoch is None:
-#         return True # raise flag regardgless as no history can be found.
-#     delta = current_epoch - last_epoch
-#     if delta // 60 > 10:
-#         return True
-#     return False
-
-# ### fetch latest epoch
-# def get_latest_clean_history_epoch_from_firebase():
-#     ref = db.reference("history_clean")
-#     data = ref.order_by_key().limit_to_last(1).get()
-
-#     if data:
-#         return int(list(data.keys())[0])
-#     return None

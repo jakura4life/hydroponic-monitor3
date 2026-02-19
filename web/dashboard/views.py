@@ -3,6 +3,8 @@ from django.shortcuts import render
 from sensor.services.hourly_service import get_hourly_data
 from sensor.services.listen_service import get_latest_reading
 
+
+# ------- Web Pages ----------
 def home_view(request):
     context = {
         "hourly_api": "api/hourly_history/"
@@ -10,11 +12,7 @@ def home_view(request):
     return render(request, "home.html", context)
 
 
-
-def hourly_view(request):
-    hourly_data = get_hourly_data(ignore_cache=False)
-    return JsonResponse([h.model_dump() for h in hourly_data], safe=False)
-
+# ------- api response page -------
 def hourly_data_api(request):
     range_label = request.GET.get("range","1d")
 
@@ -26,23 +24,23 @@ def hourly_data_api(request):
 
     return JsonResponse(payload, safe=False)
 
-def current_view(request):
-    return render(request, "dashboard/current.html")
-
 def current_data_api(request):
-    reading = get_latest_reading()
+    return JsonResponse(get_latest_reading())
+    # reading = get_latest_reading()
 
-    if not reading:
-        return JsonResponse({"error": "No data yet"}, status=200)
+    # if not reading:
+    #     return JsonResponse({"error": "No data yet"}, status=200)
 
-    return JsonResponse({
-        "ph": reading.ph,
-        "tds": reading.tds,
-        "airTemp": reading.airTemp,
-        "humidity": reading.humidity,
-        "timestamp": reading.datetime.isoformat(),
-    })
+    # return JsonResponse({
+    #     "ph": reading.ph,
+    #     "tds": reading.tds,
+    #     "airTemp": reading.airTemp,
+    #     "humidity": reading.humidity,
+    #     "timestamp": reading.datetime.isoformat(),
+    # })
 
+
+# --- debugging ---
 
 def base_view(request):
     return render(request, 'base.html')
