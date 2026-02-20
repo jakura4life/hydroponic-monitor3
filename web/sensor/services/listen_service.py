@@ -15,7 +15,9 @@ def handle_current_update(reading):
         **feedback
     }
 
-    print("[REALTIME]", LATEST_READING)
+    # print("[REALTIME]", LATEST_READING)
+    print("[REALTIME] new reading avilable")
+
 
 def start_current_listener():
     return listen_to_current(handle_current_update)

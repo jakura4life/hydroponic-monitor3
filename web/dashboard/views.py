@@ -2,6 +2,7 @@ from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from sensor.services.hourly_service import get_hourly_data
 from sensor.services.listen_service import get_latest_reading
+from sensor.settings import SENSOR_RANGES
 
 
 # ------- Web Pages ----------

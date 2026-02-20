@@ -6,7 +6,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
 <style>
-    .trend-chart-wrapper {
+    
+.trend-chart-wrapper {
     position: relative;
     height: 380px; /* adjust to match your design */
 }
@@ -26,6 +27,11 @@
     /* width: 80%;
     max-width: 600px; */
 }
+
+.progress-bar {
+    transition: width 0.5s ease, background-color 0.3s ease;
+}
+
 </style>
 {% endblock %}
 
@@ -35,28 +41,61 @@
     <h1 class="text-3xl font-bold mb-6">Current Values</h1>
 
     <!-- Realtime Data (2 columns fluid) -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 
-        <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-lg font-semibold mb-2">pH</h2>
-            <p class="text-2xl" id="ph">--</p>
+        <div id="phCard" class="p-6 rounded-xl border transition">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-semibold">pH Level</h2>
+            </div>
+
+            <p class="text-4xl font-bold" id="ph">--</p>
+
+            <div class="mt-4 h-2 bg-gray-200 rounded overflow-hidden relative">
+                <!-- Optimal zone -->
+                <div id="phOptimum"
+                    class="absolute top-0 h-2 bg-green-200 opacity-60"></div>
+                <!-- Current value -->
+                <div id="phBar"
+                    class="h-2 bg-green-500 w-0 relative"></div>
+            </div>
+
+            <p class="text-sm text-gray-500 mt-2">Optimal: 5.5 — 6.5</p>
         </div>
 
-        <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-lg font-semibold mb-2">TDS (ppm)</h2>
-            <p class="text-2xl" id="tds">--</p>
+        <div id="tdsCard" class="p-6 rounded-xl border transition">
+            <h2 class="text-lg font-semibold mb-2">TDS</h2>
+            <p class="text-4xl font-bold"><span id="tds">--</span> ppm</p>
+
+            <div class="mt-4 h-2 bg-gray-200 rounded overflow-hidden relative">
+                <div id="tdsOptimum" class="absolute top-0 h-2 bg-green-200 opacity-60"></div>
+                <div id="tdsBar" class="h-2 bg-green-500 w-0"></div>
+            </div>
+
+            <p class="text-sm text-gray-500 mt-2">Optimal: 100 — 200</p>
         </div>
 
-        <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-lg font-semibold mb-2">Air Temperature (°C)</h2>
-            <p class="text-2xl" id="temp">--</p>
+        <div id="tempCard" class="p-6 rounded-xl border transition">
+            <h2 class="text-lg font-semibold mb-2">Air Temperature</h2>
+            <p class="text-4xl font-bold"><span id="temp">--</span> °C</p>
+
+            <div class="mt-4 h-2 bg-gray-200 rounded overflow-hidden relative">
+                <div id="tempOptimum" class="absolute top-0 h-2 bg-green-200 opacity-60"></div>
+                <div id="tempBar" class="h-2 bg-green-500 w-0"></div>
+            </div>
+
+            <p class="text-sm text-gray-500 mt-2">Optimal: 18 — 24</p>
         </div>
 
-        <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-lg font-semibold mb-2">Humidity (%)</h2>
-            <p class="text-2xl" id="humidity">--</p>
-        </div>
+        <div id="humidityCard" class="p-6 rounded-xl border transition">
+            <h2 class="text-lg font-semibold mb-2">Humidity</h2>
+            <p class="text-4xl font-bold"><span id="humidity">--</span> %</p>
 
+            <div class="mt-4 h-2 bg-gray-200 rounded overflow-hidden">
+                <div id="humidityBar" class="h-2 bg-green-500 w-0"></div>
+            </div>
+
+            <p class="text-sm text-gray-500 mt-2">Optimal: 50 — 70</p>
+        </div>
 
         <div class="flex items-center gap-2">
             <p class="text-sm font-extralight text-left italic">Last update:</p>
@@ -64,7 +103,6 @@
         </div>
 
     </div>
-
 
     <!-- Graphs Section -->
     <div class="space-y-8">
@@ -124,6 +162,21 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
 
 <script>
+    const STATUS_STYLES = {
+        good: {
+            card: ["bg-green-50", "border-green-300", "outline", "outline-green-500"],
+            bar: "bg-green-500"
+        },
+        ok: {
+            card: ["bg-yellow-50", "border-yellow-300", "outline", "outline-yellow-500"],
+            bar: "bg-yellow-500"
+        },
+        bad: {
+            card: ["bg-red-50", "border-red-300", "outline", "outline-red-500"],
+            bar: "bg-red-500"
+        }
+    };
+
     async function fetchCurrentData() {
         try {
             const response = await fetch("{% url 'current_api' %}");
@@ -135,7 +188,10 @@
             document.getElementById("humidity").textContent = data.humidity ? data.humidity.toFixed(1) : "--";
             document.getElementById("lastUpdate").textContent = data.datetime ? new Date(data.datetime).toLocaleString() : '--';
 
-            document.getElementById()
+            updateSensorCard("phCard", "phBar", data.ph, 4, 8, data.ph_status);
+            updateSensorCard("tdsCard", "tdsBar", data.tds, 50, 300, data.tds_status);
+            updateSensorCard("tempCard", "tempBar", data.airTemp, 10, 30, data.temp_status);
+            updateSensorCard("humidityCard", "humidityBar", data.humidity, 30, 90, data.humidity_status);
         } catch (err) {
             console.error("Fetch error:", err);
         }
@@ -316,19 +372,63 @@
         }
     }
 
-    // initial
-    fetchCurrentData();
-    fetchHourlyData("3d");
+    // // initial
+    // fetchCurrentData();
+    // fetchHourlyData("3d");
 
-    // Refresh periodically
-    setInterval(fetchCurrentData, 60000); //1min
-    setInterval(fetchHourlyData, 3600000); // 1h
+    // // Refresh periodically
+    // setInterval(fetchCurrentData, 60000); //1min
+    // setInterval(fetchHourlyData, 3600000); // 1h
 
 
-    // Optional: dynamically change range
     function changeRange(newRange) {
         fetchHourlyData(newRange);
     }
+
+    function updateSensorCard(cardId, barId, value, min, max, status) {
+        const card = document.getElementById(cardId);
+        const bar = document.getElementById(barId);
+
+        // Reset card colours
+        card.classList.remove(
+            "bg-green-50","border-green-300",
+            "bg-yellow-50","border-yellow-300",
+            "bg-red-50","border-red-300"
+        );
+
+        // Reset bar colours
+        bar.classList.remove("bg-green-500","bg-yellow-500","bg-red-500");
+
+        const style = STATUS_STYLES[status] || STATUS_STYLES.bad;
+
+        card.classList.add(...style.card);
+        bar.classList.add(style.bar);
+
+        const percent = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+        bar.style.width = percent + "%";
+    }
+
+    function updateOptimumZone(optId, optMin, optMax, scaleMin, scaleMax) {
+        const opt = document.getElementById(optId);
+
+        const left = ((optMin - scaleMin) / (scaleMax - scaleMin)) * 100;
+        const width = ((optMax - optMin) / (scaleMax - scaleMin)) * 100;
+
+        opt.style.left = left + "%";
+        opt.style.width = width + "%";
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        fetchCurrentData();
+        fetchHourlyData("3d");
+        updateOptimumZone("phOptimum", 5.5, 6.5, 0, 14);
+        updateOptimumZone("tdsOptimum", 500, 700, 0, 1000);
+        updateOptimumZone("tempOptimum", 0, 24, 10, 40);
+        updateOptimumZone("humidityOptimum", 50, 70, 0, 100);
+
+        setInterval(fetchCurrentData, 60000);
+        setInterval(fetchHourlyData, 3600000);
+    });
 
 </script>
 {% endblock %}

@@ -1,4 +1,5 @@
 from sensor.models import SensorReading
+from sensor.settings import SENSOR_RANGES
 
 def evaluate_feedback(reading):
     feedback = {}
