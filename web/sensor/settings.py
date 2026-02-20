@@ -45,3 +45,5 @@ EVAL_RANGE = {
         "ok": (40, 80),
     },
 }
+
+VALID_TIMEFRAME_RANGE = {"all", "7d", "3d", "1d", "12h"}

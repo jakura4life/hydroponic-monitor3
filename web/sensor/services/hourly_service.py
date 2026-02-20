@@ -3,6 +3,8 @@ from sensor.pipeline.hour_main import process_hourly
 import time
 from sensor.repository.firebase_service import fetch_history_from_firebase
 
+from django.conf import settings
+
 def get_hourly_data(range_label="1d", ignore_cache=False):
     if not ignore_cache:
         cached = get_cached_hourly(range_label)
@@ -37,6 +39,26 @@ def range_to_start_epoch(range_label):
     elif range_label == "7d":
         return now - 7 * 24 * 3600
     elif range_label == "all":
-        return 0  # or earliest timestamp
+        return None  # or earliest timestamp # was "0"
     else:
         raise ValueError("Invalid range")
+
+
+# def range_to_start_epoch(range_label):
+#     now = int(time.time())
+    
+#     # if range_label not in settings.VALID_TIMEFRAME_RANGES:
+
+#     if range_label == "12h":
+#         return now - 12 * 3600
+#     elif range_label == "1d":
+#         return now - 24 * 3600
+#     elif range_label == "3d":
+#         return now - 3 * 24 * 3600
+#     elif range_label == "7d":
+#         return now - 7 * 24 * 3600
+#     elif range_label == "all":
+#         return 0  # or earliest timestamp
+#     else:
+#         raise 
+        

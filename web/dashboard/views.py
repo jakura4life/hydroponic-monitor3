@@ -2,7 +2,9 @@ from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from sensor.services.hourly_service import get_hourly_data
 from sensor.services.listen_service import get_latest_reading
-from sensor.settings import SENSOR_RANGES
+from django.conf import settings
+
+
 
 
 # ------- Web Pages ----------
@@ -27,19 +29,12 @@ def hourly_data_api(request):
 
 def current_data_api(request):
     return JsonResponse(get_latest_reading())
-    # reading = get_latest_reading()
 
-    # if not reading:
-    #     return JsonResponse({"error": "No data yet"}, status=200)
-
-    # return JsonResponse({
-    #     "ph": reading.ph,
-    #     "tds": reading.tds,
-    #     "airTemp": reading.airTemp,
-    #     "humidity": reading.humidity,
-    #     "timestamp": reading.datetime.isoformat(),
-    # })
-
+def sensor_config_api(request):
+    return JsonResponse({
+        "sensor_ranges": settings.SENSOR_RANGES,
+        "valid_timeframes": list(settings.VALID_TIMEFRAME_RANGES)
+    })
 
 # --- debugging ---
 

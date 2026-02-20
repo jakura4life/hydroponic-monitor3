@@ -3,6 +3,7 @@ import redis
 import json
 import time
 from sensor.models import HourlyAggregate
+from django.conf import settings
 
 
 # ----- Set Up -------
@@ -33,7 +34,7 @@ def seconds_until_next_hour():
     return 3600 - (now % 3600)
 
 #---- hourly ------
-VALID_RANGES = {"all", "7d", "3d", "1d", "12h"}
+VALID_RANGES = settings.VALID_TIMEFRAME_RANGES
 
 def cache_hourly(hourly: list[HourlyAggregate], range_label: str):
     if range_label not in VALID_RANGES:

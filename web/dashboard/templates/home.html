@@ -9,7 +9,7 @@
     
 .trend-chart-wrapper {
     position: relative;
-    height: 380px; /* adjust to match your design */
+    height: 380px;
 }
 #combinedChart {
     width: 100% !important;
@@ -41,7 +41,7 @@
     <h1 class="text-3xl font-bold mb-6">Current Values</h1>
 
     <!-- Realtime Data (2 columns fluid) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
 
         <div id="phCard" class="p-6 rounded-xl border transition">
             <div class="flex justify-between items-center mb-2">
@@ -56,10 +56,15 @@
                     class="absolute top-0 h-2 bg-green-200 opacity-60"></div>
                 <!-- Current value -->
                 <div id="phBar"
-                    class="h-2 bg-green-500 w-0 relative"></div>
+                    class="h-2 bg-green-500 w-0"></div>
+            </div>
+            
+            <div class="grid grid-cols-3">
+                <p id="phMinText" class="text-sm text-gray-500 mt-2 text-left">Min</p>
+                <p id="phOptimalText" class="text-sm text-gray-500 mt-2 text-center"></p>
+                <p id="phMaxText" class="text-sm text-gray-500 mt-2 text-right">Max</p>
             </div>
 
-            <p class="text-sm text-gray-500 mt-2">Optimal: 5.5 — 6.5</p>
         </div>
 
         <div id="tdsCard" class="p-6 rounded-xl border transition">
@@ -70,8 +75,13 @@
                 <div id="tdsOptimum" class="absolute top-0 h-2 bg-green-200 opacity-60"></div>
                 <div id="tdsBar" class="h-2 bg-green-500 w-0"></div>
             </div>
+            
+            <div class="grid grid-cols-3">
+                <p id="tdsMinText" class="text-sm text-gray-500 mt-2 text-left">Min</p>
+                <p id="tdsOptimalText" class="text-sm text-gray-500 mt-2"></p>
+                <p id="tdsMaxText" class="text-sm text-gray-500 mt-2 text-right">Max</p>
+            </div>
 
-            <p class="text-sm text-gray-500 mt-2">Optimal: 100 — 200</p>
         </div>
 
         <div id="tempCard" class="p-6 rounded-xl border transition">
@@ -83,18 +93,27 @@
                 <div id="tempBar" class="h-2 bg-green-500 w-0"></div>
             </div>
 
-            <p class="text-sm text-gray-500 mt-2">Optimal: 18 — 24</p>
+            <div class="grid grid-cols-3">
+                <p id="tempMinText" class="text-sm text-gray-500 mt-2 text-left">Min</p>
+                <p id="tempOptimalText" class="text-sm text-gray-500 mt-2"></p>
+                <p id="tempMaxText" class="text-sm text-gray-500 mt-2 text-right">Max</p>
+            </div>
         </div>
 
         <div id="humidityCard" class="p-6 rounded-xl border transition">
             <h2 class="text-lg font-semibold mb-2">Humidity</h2>
             <p class="text-4xl font-bold"><span id="humidity">--</span> %</p>
 
-            <div class="mt-4 h-2 bg-gray-200 rounded overflow-hidden">
+            <div class="mt-4 h-2 bg-gray-200 rounded overflow-hidden relative">
+                <div id="humidityOptimum" class="absolute top-0 h-2 bg-green-200 opacity-60"></div>
                 <div id="humidityBar" class="h-2 bg-green-500 w-0"></div>
             </div>
 
-            <p class="text-sm text-gray-500 mt-2">Optimal: 50 — 70</p>
+            <div class="grid grid-cols-3">
+                <p id="humidityMinText" class="text-sm text-gray-500 mt-2 text-left">Min</p>
+                <p id="humidityOptimalText" class="text-sm text-gray-500 mt-2 text-center"></p>
+                <p id="humidityMaxText" class="text-sm text-gray-500 mt-2 text-right">Max</p>
+            </div>
         </div>
 
         <div class="flex items-center gap-2">
@@ -177,10 +196,20 @@
         }
     };
 
+    let SENSOR_CONFIG = null;
+
+    async function fetchConfig() {
+        const res = await fetch("/api/config/");
+        SENSOR_CONFIG = await res.json();
+
+        applyConfigToUI();
+    }
+
     async function fetchCurrentData() {
         try {
             const response = await fetch("{% url 'current_api' %}");
             const data = await response.json();
+            const ranges = SENSOR_CONFIG.sensor_ranges;
 
             document.getElementById("ph").textContent = data.ph ? data.ph.toFixed(2) : "--";
             document.getElementById("tds").textContent = data.tds || "--";
@@ -188,10 +217,45 @@
             document.getElementById("humidity").textContent = data.humidity ? data.humidity.toFixed(1) : "--";
             document.getElementById("lastUpdate").textContent = data.datetime ? new Date(data.datetime).toLocaleString() : '--';
 
-            updateSensorCard("phCard", "phBar", data.ph, 4, 8, data.ph_status);
-            updateSensorCard("tdsCard", "tdsBar", data.tds, 50, 300, data.tds_status);
-            updateSensorCard("tempCard", "tempBar", data.airTemp, 10, 30, data.temp_status);
-            updateSensorCard("humidityCard", "humidityBar", data.humidity, 30, 90, data.humidity_status);
+            // updateSensorCard("phCard", "phBar", data.ph, ranges.ph.scale_min, ranges.ph.scale_max, data.ph_status);
+            // updateSensorCard("tdsCard", "tdsBar", data.tds, 50, 300, data.tds_status);
+            // updateSensorCard("tempCard", "tempBar", data.airTemp, 10, 30, data.temp_status);
+            // updateSensorCard("humidityCard", "humidityBar", data.humidity, 30, 90, data.humidity_status);
+
+            updateSensorCard(
+                "phCard", 
+                "phBar", 
+                data.ph, 
+                ranges.ph.scale_min, 
+                ranges.ph.scale_max, 
+                data.ph_status
+            );
+
+            updateSensorCard(
+                "tdsCard", 
+                "tdsBar", 
+                data.tds, 
+                ranges.tds.scale_min, 
+                ranges.tds.scale_max, 
+                data.tds_status
+            );
+
+            updateSensorCard("tempCard", 
+                "tempBar", 
+                data.airTemp, 
+                ranges.temp.scale_min, 
+                ranges.temp.scale_max, 
+                data.temp_status
+            );
+
+            updateSensorCard("humidityCard", 
+                "humidityBar", 
+                data.humidity, 
+                ranges.humidity.scale_min, 
+                ranges.humidity.scale_max, 
+                data.humidity_status
+            );
+
         } catch (err) {
             console.error("Fetch error:", err);
         }
@@ -418,13 +482,80 @@
         opt.style.width = width + "%";
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
+    function applyConfigToUI() {
+        const ranges = SENSOR_CONFIG.sensor_ranges;
+
+        updateOptimumZone(
+            "phOptimum",
+            ranges.ph.opt_min,
+            ranges.ph.opt_max,
+            ranges.ph.scale_min,
+            ranges.ph.scale_max
+        );
+
+        updateOptimumZone(
+            "tdsOptimum",
+            ranges.tds.opt_min,
+            ranges.tds.opt_max,
+            ranges.tds.scale_min,
+            ranges.tds.scale_max
+        );
+
+        updateOptimumZone(
+            "tempOptimum",
+            ranges.temp.opt_min,
+            ranges.temp.opt_max,
+            ranges.temp.scale_min,
+            ranges.temp.scale_max
+        );
+
+        updateOptimumZone(
+            "humidityOptimum",
+            ranges.humidity.opt_min,
+            ranges.humidity.opt_max,
+            ranges.humidity.scale_min,
+            ranges.humidity.scale_max
+        );
+
+        updateOptimalText(ranges)
+    }
+
+    function updateOptimalText(ranges) {
+        // ph section
+        document.getElementById("phMinText").textContent = `${ranges.ph.scale_min}`
+        document.getElementById("phMaxText").textContent = `${ranges.ph.scale_max}`
+        document.getElementById("phOptimalText").textContent =
+            `Optimal: ${ranges.ph.opt_min} — ${ranges.ph.opt_max}`;
+
+
+        // tds section
+        document.getElementById("tdsMinText").textContent = `${ranges.tds.scale_min}`
+        document.getElementById("tdsMaxText").textContent = `${ranges.tds.scale_max}`
+        document.getElementById("tdsOptimalText").textContent =
+            `Optimal: ${ranges.tds.opt_min} — ${ranges.tds.opt_max}`;
+
+        // temp section
+        document.getElementById("tempMinText").textContent = `${ranges.temp.scale_min}`
+        document.getElementById("tempMaxText").textContent = `${ranges.temp.scale_max}`
+        document.getElementById("tempOptimalText").textContent =
+            `Optimal: ${ranges.temp.opt_min} — ${ranges.temp.opt_max}`;
+
+        // humidity section
+        document.getElementById("humidityMaxText").textContent = `${ranges.humidity.scale_max}`
+        document.getElementById("humidityMinText").textContent = `${ranges.humidity.scale_min}`
+        document.getElementById("humidityOptimalText").textContent =
+            `Optimal: ${ranges.humidity.opt_min} — ${ranges.humidity.opt_max}`;
+    }
+
+    document.addEventListener("DOMContentLoaded", async function () {
+        await fetchConfig();
+
         fetchCurrentData();
         fetchHourlyData("3d");
-        updateOptimumZone("phOptimum", 5.5, 6.5, 0, 14);
-        updateOptimumZone("tdsOptimum", 500, 700, 0, 1000);
-        updateOptimumZone("tempOptimum", 0, 24, 10, 40);
-        updateOptimumZone("humidityOptimum", 50, 70, 0, 100);
+        // updateOptimumZone("phOptimum", 5.5, 6.5, 0, 14);
+        // updateOptimumZone("tdsOptimum", 500, 700, 0, 1000);
+        // updateOptimumZone("tempOptimum", 0, 24, 10, 40);
+        // updateOptimumZone("humidityOptimum", 50, 70, 0, 100);
 
         setInterval(fetchCurrentData, 60000);
         setInterval(fetchHourlyData, 3600000);
