@@ -2,8 +2,6 @@
 {% block title %}Home - Hydroponic Dashboard{% endblock %}
 
 {% block extra_css %}
-<!-- Tailwind + optional custom CSS -->
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
 <style>
     
@@ -125,27 +123,30 @@
 
     <!-- Graphs Section -->
     <div class="space-y-8">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold">Trend</h2>
-
-            <div class="flex gap-2">
-                <button onclick="changeRange('12h')" class="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200">12H</button>
-                <button onclick="changeRange('1d')" class="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200">24H</button>
-                <button onclick="changeRange('3d')" class="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200">3D</button>
-                <button onclick="changeRange('7d')" class="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200">7D</button>
-                <button onclick="changeRange('all')" class="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200">All</button>
-            </div>
-        </div>
-
-
         <div class="bg-white p-6 rounded shadow">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Trend</h2>
+                    <div class="flex gap-2">
+                        <button onclick="changeRange('12h')" class="px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-300 active:bg-gray-600">12H</button>
+                        <button onclick="changeRange('1d')" class="px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-300 active:bg-gray-600">24H</button>
+                        <button onclick="changeRange('3d')" class="px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-300 active:bg-gray-600">3D</button>
+                        <button onclick="changeRange('7d')" class="px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-300 active:bg-gray-600">7D</button>
+                        <button onclick="changeRange('all')" class="px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-300 active:bg-gray-600">All</button>
+                    </div>
+            </div>
             <div class="trend-chart-wrapper">
                 <!-- <h2 class="text-x1 font-semibold mb-4">Trend</h2> -->
                 <canvas id="combineChart"></canvas>
 
                 <div id="chartMessage" class="hidden">
-                     No data available for selected range
+                    No data available for selected range
                 </div>
+            </div>
+
+            <div class="flex justify-end mt-4">
+                <a href="{% url 'detailed_graph' %}" class="px-2 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700">
+                    View More →
+                </a>
             </div>
         </div>
 

@@ -1,7 +1,7 @@
 services:
   web:
       build: .
-      container_name: django_app
+      container_name: hydroponic-django
       command: python manage.py runserver 0.0.0.0:8000
       volumes:
         - .:/app
@@ -23,8 +23,8 @@ services:
     container_name: redis_cache
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
+    # volumes:
+    #   - redis_data:/data
     command: redis-server --appendonly yes
     networks:
       - django_network
@@ -35,8 +35,8 @@ services:
       retries: 5
 
 
-volumes:
-  redis_data:
+# volumes:
+#   redis_data:
 
 networks:
   django_network:

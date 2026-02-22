@@ -88,6 +88,8 @@ void setup() {
 }
 
 void loop() {
+  checkWiFi();
+
   receiveDataFromArduino();
   
   if (newDataAvailable && Firebase.ready()) {
@@ -103,7 +105,7 @@ void loop() {
     newDataAvailable = false;
   }
   
-  delay(3000);
+  delay(10);
 }
 
 
@@ -223,7 +225,6 @@ Set Up Functions
 ----------*/
 void setupWiFi() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  WiFi.begin();
 
   int attempts = 0;
   while (WiFi.status() != WL_CONNECTED && attempts < 40) {
@@ -256,6 +257,10 @@ void setupFirebase() {
   // ESP32 specific settings
   fbdo.setBSSLBufferSize(4096, 1024);
   fbdo.setResponseSize(2048);
+
+  // new settings
+  // fbdo.setBSSLBufferSize(8192, 2048);
+  // fbdo.setResponseSize(4096);
   
   Firebase.reconnectWiFi(true);
 
@@ -277,5 +282,12 @@ void setupTime() {
     Serial.printf("Time initialized: %lu\n", epochTime);
   } else {
     Serial.println("Initial time sync failed, will retry...");
+  }
+}
+
+
+void checkWiFi() {
+  if (WiFi.status() != WL_CONNECTED) {
+    ESP.restart();
   }
 }

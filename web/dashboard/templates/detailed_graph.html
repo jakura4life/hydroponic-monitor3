@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}
+Detail Graph - Hydroponic Dashboard
+{% endblock %}
+{% block extra_css %}
+<!-- <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> -->
+
+{% endblock %}
+{% block content %}
+<div class="space-y-8">
+
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-semibold mb-4">pH Analysis</h2>
+        <canvas id="phChart"></canvas>
+    </div>
+
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-semibold mb-4">TDS Analysis</h2>
+        <canvas id="tdsChart"></canvas>
+    </div>
+
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-semibold mb-4">Temperature Analysis</h2>
+        <canvas id="tempChart"></canvas>
+    </div>
+
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+<script>
+    const phChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'pH',
+                data: phData,
+                tension: 0.3
+            }]
+        },
+        options: {
+            plugins: {
+                annotation: {
+                    annotations: {
+                        minLine: {
+                            type: 'line',
+                            yMin: 5.5,
+                            yMax: 5.5
+                        },
+                        maxLine: {
+                            type: 'line',
+                            yMin: 6.5,
+                            yMax: 6.5
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+</script>
+{% endblock %}

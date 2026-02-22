@@ -14,6 +14,11 @@ def home_view(request):
     }
     return render(request, "home.html", context)
 
+def detailed_graph_view(request):
+    context = {
+        
+    }
+    return render(request, "detailed_graph.html", context)
 
 # ------- api response page -------
 def hourly_data_api(request):
