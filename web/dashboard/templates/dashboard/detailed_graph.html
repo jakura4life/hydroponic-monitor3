@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}
+Detail Graph - Hydroponic Dashboard
+{% endblock %}
+{% block extra_css %}
+<!-- <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+
+{% endblock %}
+{% block content %}
+<div class="space-y-8">
+
+    <!-- floating range buttons -->
+    <!-- <div class="flex gap-2"> -->
+    <!-- <div class="fixed bottom-6 right-6 z-50 bg-white/90 backdrop-blur-md shadow-xl rounded-xl p-3 flex gap-2 border"> -->
+    <div class="sticky top-15 z-50 bg-white shadow-md p-3 flex gap-2">
+        <button onclick="changeRange(this, '12h')" class="range-btn duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">12H</button>
+        <button onclick="changeRange(this, '1d')" class="range-btn duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">24H</button>
+        <button onclick="changeRange(this, '3d')" class="range-btn duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">3D</button>
+        <button onclick="changeRange(this, '7d')" class="range-btn duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">7D</button>
+        <button onclick="changeRange(this, 'all')" class="range-btn duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">All</button>
+    </div>
+
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-semibold mb-4">pH Analysis</h2>
+        <canvas id="phChart"></canvas>
+    </div>
+
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-semibold mb-4">TDS Analysis</h2>
+        <canvas id="tdsChart"></canvas>
+    </div>
+
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-semibold mb-4">Temperature Analysis</h2>
+        <canvas id="tempChart"></canvas>
+    </div>
+
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+let phChart, tdsChart, tempChart;
+let SENSOR_RANGES = null;
+
+async function loadDetailedData() {
+    try {
+        const resData = await fetch("{% url 'hourly_api' %}?range=3d");
+        const resConfig = await fetch("{% url 'config_api' %}");
+
+        const hourlyData = await resData.json();
+        const config = await resConfig.json();
+
+        // Build datasets
+        const phPoints = hourlyData.map(h => ({
+            x: new Date(h.hour),
+            y: h.avg_ph
+        }));
+
+        const tdsPoints = hourlyData.map(h => ({
+            x: new Date(h.hour),
+            y: h.avg_tds
+        }));
+
+        const tempPoints = hourlyData.map(h => ({
+            x: new Date(h.hour),
+            y: h.avg_temp
+        }));
+
+        SENSOR_RANGES = config.sensor_ranges
+        phChart = createChart("phChart", "pH", phPoints, SENSOR_RANGES.ph.opt_min, SENSOR_RANGES.ph.opt_max);
+        tdsChart = createChart("tdsChart", "TDS", tdsPoints, SENSOR_RANGES.tds.opt_min, SENSOR_RANGES.tds.opt_max);
+        tempChart = createChart("tempChart", "Temperature", tempPoints, SENSOR_RANGES.temp.opt_min, SENSOR_RANGES.temp.opt_max);
+
+    } catch (err) {
+        console.error("Detailed graph load error:", err);
+    }
+}
+
+function createChart(canvasId, label, dataPoints, minOpt, maxOpt) {
+    const ctx = document.getElementById(canvasId).getContext("2d");
+
+    return new Chart(ctx, {
+        type: "line",
+        data: {
+            datasets: [{
+                label: label,
+                data: dataPoints,
+                tension: 0.3,
+                borderWidth: 2,
+                pointRadius: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2, // width/height ratio (e.g., 2 = twice as wide as tall)
+            scales: {
+                x: {
+                    type: "time",
+                    time: { unit: "hour" },
+                    title: { display: true, text: "Time" }
+                },
+                y: {
+                    title: { display: true, text: label }
+                }
+            },
+            plugins: {
+                legend: {
+                display: false,
+                position: 'bottom',
+                },
+                annotation: {
+                    annotations: {
+                        // minLine: {
+                        //     type: "line",
+                        //     yMin: minOpt,
+                        //     yMax: minOpt,
+                        //     borderWidth: 1
+                        // },
+                        // maxLine: {
+                        //     type: "line",
+                        //     yMin: maxOpt,
+                        //     yMax: maxOpt,
+                        //     borderWidth: 1
+                        // },
+                        safeZone: {
+                            type: "box",
+                            yMin: minOpt,
+                            yMax: maxOpt,
+                            backgroundColor: "rgba(99,225,132,0.2)"
+                        },
+                        // zoom: {
+                        //     pan: { enabled: true, mode: "x" },
+                        //     zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: "x" }
+                        // },
+                    }
+                }
+            }
+        }
+    });
+}
+
+function changeRange(button, newRange) {
+
+    document.querySelectorAll('.range-btn').forEach(btn => {
+        btn.classList.remove('bg-emerald-500', 'text-white');
+    });
+
+    button.classList.add('bg-emerald-500', 'text-white');
+    
+    updateCharts(newRange);
+}
+
+async function updateCharts(range) {
+    try {
+        const res = await fetch(`{% url 'hourly_api' %}?range=${range}`);
+        const hourlyData = await res.json();
+
+        const phPoints = hourlyData.map(h => ({ x: new Date(h.hour), y: h.avg_ph }));
+        const tdsPoints = hourlyData.map(h => ({ x: new Date(h.hour), y: h.avg_tds }));
+        const tempPoints = hourlyData.map(h => ({ x: new Date(h.hour), y: h.avg_temp }));
+
+        phChart.data.datasets[0].data = phPoints;
+        tdsChart.data.datasets[0].data = tdsPoints;
+        tempChart.data.datasets[0].data = tempPoints;
+
+        phChart.update();
+        tdsChart.update();
+        tempChart.update();
+
+    } catch (err) {
+        console.error("Range update error:", err);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", loadDetailedData);
+</script>
+{% endblock %}

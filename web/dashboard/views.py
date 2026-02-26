@@ -12,13 +12,13 @@ def home_view(request):
     context = {
         "hourly_api": "api/hourly_history/"
     }
-    return render(request, "home.html", context)
+    return render(request, "dashboard/dashboard.html", context)
 
 def detailed_graph_view(request):
     context = {
         
     }
-    return render(request, "detailed_graph.html", context)
+    return render(request, "dashboard/detailed_graph.html", context)
 
 # ------- api response page -------
 def hourly_data_api(request):

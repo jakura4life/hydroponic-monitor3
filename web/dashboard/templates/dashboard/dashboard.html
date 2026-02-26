@@ -30,6 +30,10 @@
     transition: width 0.5s ease, background-color 0.3s ease;
 }
 
+a {
+    text-decoration: none;
+}
+
 </style>
 {% endblock %}
 
@@ -127,11 +131,11 @@
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold">Trend</h2>
                     <div class="flex gap-2">
-                        <button onclick="changeRange('12h')" class="px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-300 active:bg-gray-600">12H</button>
-                        <button onclick="changeRange('1d')" class="px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-300 active:bg-gray-600">24H</button>
-                        <button onclick="changeRange('3d')" class="px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-300 active:bg-gray-600">3D</button>
-                        <button onclick="changeRange('7d')" class="px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-300 active:bg-gray-600">7D</button>
-                        <button onclick="changeRange('all')" class="px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-300 active:bg-gray-600">All</button>
+                        <button onclick="changeRange(this, '12h')" class="transition-colors duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">12H</button>
+                        <button onclick="changeRange(this, '1d')" class="transition-colors duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">24H</button>
+                        <button onclick="changeRange(this, '3d')" class="transition-colors duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">3D</button>
+                        <button onclick="changeRange(this, '7d')" class="transition-colors duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">7D</button>
+                        <button onclick="changeRange(this, 'all')" class="transition-colors duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">All</button>
                     </div>
             </div>
             <div class="trend-chart-wrapper">
@@ -200,7 +204,7 @@
     let SENSOR_CONFIG = null;
 
     async function fetchConfig() {
-        const res = await fetch("/api/config/");
+        const res = await fetch("{% url 'config_api' %}");
         SENSOR_CONFIG = await res.json();
 
         applyConfigToUI();
@@ -283,7 +287,13 @@
                 // zoom: {
                 //     pan: {
                 //         enabled: true,
-                //         mode: 'x'
+                //         mode: 'x',
+                //         limits: {
+                //             x: {
+                //                 min: 'original',
+                //                 max: 'original',
+                //             }
+                //         }
                 //     },
                 //     zoom: {
                 //         wheel: {
@@ -295,8 +305,8 @@
                 //         mode: 'x',
                 //         limits: {
                 //             x: {
-                //                 min: 'original',
-                //                 max: 'original',
+                //                 min: 0,
+                //                 max: 100,
                 //                 minRange: 5
                 //             },
                 //             y: {
@@ -309,7 +319,6 @@
                 // }
             },
             scales: {
-                // scales need to change when selected on all time.
                 x: {
                     type: 'time',
                     time: {
@@ -336,7 +345,7 @@
     });
     }
 
-    async function  fetchHourlyData(range = "1d") {
+    async function  fetchHourlyData(range = "3d") {
         try {
             const response = await fetch (`/api/hourly_history/?range=${range}`);
             const hourlyData = await response.json();
@@ -446,7 +455,14 @@
     // setInterval(fetchHourlyData, 3600000); // 1h
 
 
-    function changeRange(newRange) {
+    function changeRange(button, newRange) {
+
+        document.querySelectorAll('.range-btn').forEach(btn => {
+            btn.classList.remove('bg-emerald-500', 'text-white');
+        });
+
+        button.classList.add('bg-emerald-500', 'text-white');
+        
         fetchHourlyData(newRange);
     }
 
@@ -560,6 +576,13 @@
 
         setInterval(fetchCurrentData, 60000);
         setInterval(fetchHourlyData, 3600000);
+
+        const defaultBtn = [...document.querySelectorAll('.range-btn')]
+        .find(btn => btn.textContent.trim() === '3D');
+
+        if (defaultBtn) {
+            defaultBtn.classList.add('bg-emerald-500', 'text-white');
+        }
     });
 
 </script>
