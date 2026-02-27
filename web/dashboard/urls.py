@@ -7,6 +7,8 @@ urlpatterns = [
     path("api/current/", views.current_data_api , name= "current_api"),
     path("api/config/", views.sensor_config_api, name="config_api"),
 
+    path("api/alerts/", views.active_alerts_api, name="alerts_api"),
+
     # views
     path("dashboard/", views.home_view, name="dashboard"),
     path("dashboard/detailed_graph/", views.detailed_graph_view, name="detailed_graph"),

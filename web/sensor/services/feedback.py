@@ -1,51 +1,8 @@
 from sensor.models import SensorReading
 from django.conf import settings
+from sensor.services.alert_service import trigger_alert, resolve_alert
+from sensor.models import Alert
 
-# def evaluate_feedback(reading):
-#     feedback = {}
-
-#     ph = reading.get("ph")
-#     tds = reading.get("tds")
-#     temp = reading.get("airTemp")
-#     humidity = reading.get("humidity")
-
-#     # pH rules (hydroponics typical)
-#     if ph is not None:
-#         if 5.5 <= ph <= 6.5:
-#             feedback["ph_status"] = "good"
-#         elif 5.0 <= ph <= 7.0:
-#             feedback["ph_status"] = "ok"
-#         else:
-#             feedback["ph_status"] = "bad"
-
-#     # TDS rules
-#     if tds is not None:
-#         if 500 <= tds <= 900:
-#             feedback["tds_status"] = "good"
-#         elif 300 <= tds <= 1200:
-#             feedback["tds_status"] = "ok"
-#         else:
-#             feedback["tds_status"] = "bad"
-
-#     # Temperature rules
-#     if temp is not None:
-#         if 18 <= temp <= 24:
-#             feedback["temp_status"] = "good"
-#         elif 15 <= temp <= 30:
-#             feedback["temp_status"] = "ok"
-#         else:
-#             feedback["temp_status"] = "bad"
-
-#     # Humidity rules
-#     if humidity is not None:
-#         if 50 <= humidity <= 70:
-#             feedback["humidity_status"] = "good"
-#         elif 40 <= humidity <= 80:
-#             feedback["humidity_status"] = "ok"
-#         else:
-#             feedback["humidity_status"] = "bad"
-
-#     return feedback
 
 def evaluate_feedback(reading):
     feedback = {}
@@ -71,6 +28,8 @@ def evaluate_feedback(reading):
         ranges["humidity"]
     )
 
+    process_alerts(reading, feedback)    
+
     return feedback
 
 def evaluate_status(value, ranges):
@@ -86,3 +45,55 @@ def evaluate_status(value, ranges):
         return "ok"
     else:
         return "bad"
+    
+def process_alerts(reading, feedback):
+    sensor_map = {
+        "ph": reading.get("ph"),
+        "tds": reading.get("tds"),
+        "temp": reading.get("airTemp"),
+        # "humidity": reading.get("humidity"),
+    }
+
+    recommendations = {
+        "ph": "Use pH adjusters to ",
+        "tds": "Dilute with ",
+        "temp": "djust heater,fan or ventalation.",
+        # "humidity": "Increase ventilation or humidifier to reach 50–70%.",
+    }
+
+    for sensor, value in sensor_map.items():
+        status = feedback.get(f"{sensor}_status")
+
+        if status in ["bad", "ok"]:
+            severity = "critical" if status == "bad" else "warning"
+            message = (
+                f"{sensor.upper()} is outside safe range"
+                if status == "bad"
+                else f"{sensor.upper()} slightly out of optimal range"
+            )
+
+            # Look for existing active alert
+            existing_alert = Alert.objects.filter(sensor=sensor, is_active=True).first()
+
+            if existing_alert:
+                print('update alert')
+                # Update if severity or value changed
+                if existing_alert.severity != severity or existing_alert.value != value:
+                    existing_alert.severity = severity
+                    existing_alert.value = value
+                    existing_alert.message = message
+                    existing_alert.save()
+            else:
+                # No active alert, create one
+                print('create alaer')
+                Alert.objects.create(
+                    sensor=sensor,
+                    severity=severity,
+                    value=value,
+                    message=message,
+                    is_active=True
+                )
+
+        elif status == "good":
+            # Automatically resolve existing alert if sensor is back to good
+            Alert.objects.filter(sensor=sensor, is_active=True).update(is_active=False)

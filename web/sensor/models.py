@@ -32,10 +32,6 @@ class SensorReading(BaseModel):
             airTemp=data["temperature"],
         )
     
-
-
-
-
 class HourlyAggregate(BaseModel):
     hour: datetime
     avg_ph: float
@@ -60,14 +56,24 @@ class HourlyAggregate(BaseModel):
             avg_temp=avg_temp,
             avg_humidity=avg_humidity
         )
+
     
-    def generate_feedback(hourly):
-        messages = []
+class Alert(models.Model):
+    SENSOR_CHOICES = [
+        ("ph", "pH"),
+        ("tds", "TDS"),
+        ("temp", "Temperature"),
+        ("humidity", "Humidity"),
+    ]
 
-        if hourly.avg_ph > 7:
-            messages.append("pH high — adjust nutrient solution")
+    sensor = models.CharField(max_length=20, choices=SENSOR_CHOICES)
+    severity = models.CharField(max_length=10)  # e.g., "ok", "bad"
+    value = models.FloatField()
+    message = models.TextField()
+    recommendation = models.TextField(null=True,default=None)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-        if hourly.avg_temp > 28:
-            messages.append("High temperature risk")
-
-        return messages
+    class Meta:
+        db_table = 'sensor_alert'

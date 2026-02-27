@@ -3,14 +3,15 @@ from django.shortcuts import render
 from sensor.services.hourly_service import get_hourly_data
 from sensor.services.listen_service import get_latest_reading
 from django.conf import settings
-
+from sensor.models import Alert
 
 
 
 # ------- Web Pages ----------
 def home_view(request):
+    alerts = Alert.objects.filter(is_active=True)
     context = {
-        "hourly_api": "api/hourly_history/"
+        'active_alerts': alerts,
     }
     return render(request, "dashboard/dashboard.html", context)
 
@@ -40,6 +41,23 @@ def sensor_config_api(request):
         "sensor_ranges": settings.SENSOR_RANGES,
         "valid_timeframes": list(settings.VALID_TIMEFRAME_RANGES)
     })
+
+def active_alerts_api(request):
+    #path("api/alerts/", active_alerts_api, name="alerts_api"),
+    alerts = Alert.objects.filter(is_active=True).order_by("-created_at")
+
+    data = [
+        {
+            "sensor": a.sensor,
+            "severity": a.severity,
+            "message": a.message,
+            "value": a.value,
+            "created_at": a.created_at,
+        }
+        for a in alerts
+    ]
+
+    return JsonResponse(data, safe=False)
 
 # --- debugging ---
 

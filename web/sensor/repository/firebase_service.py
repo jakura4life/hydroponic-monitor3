@@ -6,16 +6,35 @@ from sensor.models import SensorReading
 
 firebase_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
 
-if not firebase_admin._apps:
-    cred_dict = json.loads(firebase_json)
-    cred = credentials.Certificate(cred_dict)
+# if not firebase_admin._apps:
+#     cred_dict = json.loads(firebase_json)
+#     cred = credentials.Certificate(cred_dict)
 
-    firebase_admin.initialize_app(cred, {
-        "databaseURL": os.getenv("FIREBASE_DB_URL")
-    })
+#     firebase_admin.initialize_app(cred, {
+#         "databaseURL": os.getenv("FIREBASE_DB_URL")
+#     })
+
+def get_firebase_app():
+    if not firebase_admin._apps:
+        firebase_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
+        db_url = os.getenv("FIREBASE_DB_URL")
+
+        if not firebase_json or not db_url:
+            raise RuntimeError("Firebase environment variables not configured")
+
+        cred_dict = json.loads(firebase_json)
+        cred = credentials.Certificate(cred_dict)
+
+        firebase_admin.initialize_app(cred, {
+            "databaseURL": db_url
+        })
+
+    return firebase_admin.get_app()
 
 # hourly data
 def fetch_history_from_firebase(start_epoch=None):
+    get_firebase_app()
+
     ref = db.reference("sensorData/history")
 
     if start_epoch:
@@ -36,6 +55,7 @@ def fetch_history_from_firebase(start_epoch=None):
 
 # Listeners
 def listen_to_current(callback):
+    get_firebase_app()
 
     def wrapper(event):
         if event.data:

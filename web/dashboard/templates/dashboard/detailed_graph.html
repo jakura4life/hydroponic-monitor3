@@ -18,7 +18,7 @@ Detail Graph - Hydroponic Dashboard
     <div class="sticky top-15 z-50 bg-white shadow-md p-3 flex gap-2">
         <button onclick="changeRange(this, '12h')" class="range-btn duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">12H</button>
         <button onclick="changeRange(this, '1d')" class="range-btn duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">24H</button>
-        <button onclick="changeRange(this, '3d')" class="range-btn duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">3D</button>
+        <button onclick="changeRange(this, '3d')" class="range-btn duration-500 range-btn px-3 py-1 bg-emerald-100 bg-emerald-500  text-white rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">3D</button>
         <button onclick="changeRange(this, '7d')" class="range-btn duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">7D</button>
         <button onclick="changeRange(this, 'all')" class="range-btn duration-500 range-btn px-3 py-1 bg-emerald-100 rounded hover:bg-emerald-200 focus:bg-emerald-500 active:bg-gray-600">All</button>
     </div>
@@ -177,5 +177,6 @@ async function updateCharts(range) {
 }
 
 document.addEventListener("DOMContentLoaded", loadDetailedData);
+
 </script>
 {% endblock %}

@@ -34,11 +34,38 @@ a {
     text-decoration: none;
 }
 
+#alertsContainer div {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#alertsContainer div.removed {
+    opacity: 0;
+    transform: translateX(20px);
+}
+
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="max-w-6xl mx-auto p-6">
+
+    <!-- Alerts Panel -->
+    {% if active_alerts %}
+    <div id="alertsContainer" class="mb-6 space-y-2">
+        {% for alert in active_alerts %}
+            <div id="alert-{{ alert.id }}" 
+                 class="p-3 rounded shadow flex justify-between items-center
+                        {% if alert.severity == 'critical' %}bg-red-100 text-red-800{% elif alert.severity == 'warning' %}bg-yellow-100 text-yellow-800{% else %}bg-gray-200 text-gray-800{% endif %}">
+                <span class="font-medium">{{ alert.sensor|upper }}:</span>
+                <span>{{ alert.message }} ({{ alert.value }})</span>
+                
+                <!-- Dismiss Button -->
+                <button onclick="dismissAlert('{{ alert.id }}')" 
+                        class="ml-4 text-lg font-bold hover:text-gray-600">&times;</button>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <h1 class="text-3xl font-bold mb-6">Current Values</h1>
 
@@ -347,7 +374,7 @@ a {
 
     async function  fetchHourlyData(range = "3d") {
         try {
-            const response = await fetch (`/api/hourly_history/?range=${range}`);
+            const response = await fetch (`{% url 'hourly_api' %}?range=${range}`);
             const hourlyData = await response.json();
 
             if (!Array.isArray(hourlyData) || hourlyData.length === 0) {
@@ -584,6 +611,14 @@ a {
             defaultBtn.classList.add('bg-emerald-500', 'text-white');
         }
     });
+
+    function dismissAlert(alertId) {
+        const alertEl = document.getElementById(`alert-${alertId}`);
+        if (alertEl) {
+            alertEl.remove(); 
+            setTimeout(() => alertEl.remove(), 300); // wait for CSS animation
+        }
+    }
 
 </script>
 {% endblock %}

@@ -10,21 +10,22 @@ from django.conf import settings
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = os.getenv("REDIS_PORT", 6379)
 
-r = redis.Redis(
-    host=REDIS_HOST,
-    port=int(REDIS_PORT),
-    db=0,
-    decode_responses=True
-)
+def get_redis():
+    return redis.Redis(
+        host=REDIS_HOST,
+        port=int(REDIS_PORT),
+        db=0,
+        decode_responses=True
+    )
 
-for i in range(10):
-    try:
-        r.ping()
-        print("Connected to Redis")
-        break
-    except redis.ConnectionError:
-        print("Waiting for Redis...")
-        time.sleep(2)
+# for i in range(10):
+#     try:
+#         r.ping()
+#         print("Connected to Redis")
+#         break
+#     except redis.ConnectionError:
+#         print("Waiting for Redis...")
+#         time.sleep(2)
 
 def _hourly_cache_key(range_label: str):
     return f"sensor:hourly:{range_label}"
@@ -37,6 +38,10 @@ def seconds_until_next_hour():
 VALID_RANGES = settings.VALID_TIMEFRAME_RANGES
 
 def cache_hourly(hourly: list[HourlyAggregate], range_label: str):
+    r = get_redis()
+    if not r:
+        print("INFO: redis unavailable")
+        return None
     if range_label not in VALID_RANGES:
         raise ValueError(f"Invalid range: {range_label}")
 
@@ -50,6 +55,10 @@ def cache_hourly(hourly: list[HourlyAggregate], range_label: str):
     print(f"[CACHE] Hourly data cached ({range_label})")
 
 def get_cached_hourly(range_label: str) -> list[HourlyAggregate] | None:
+    r = get_redis()
+    if not r:
+        print("INFO: redis unavailable")
+
     if range_label not in VALID_RANGES:
         raise ValueError(f"Invalid range: {range_label}")
 
