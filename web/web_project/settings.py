@@ -171,14 +171,20 @@ EVAL_RANGES = {
         "good": (100, 200),
         "ok": (80, 250),
     },
-    "temp": {
+    "airTemp": {
         "good": (18, 24),
         "ok": (15, 28),
     },
     "humidity": {
         "good": (50, 70),
-        "ok": (40, 80),
+        "ok": (30, 90),
     },
 }
 
 VALID_TIMEFRAME_RANGES = {"all", "7d", "3d", "1d", "12h"}
+
+# ----- Whatsapp messaging service
+
+WHATSAPP_TOKEN=os.getenv("WHATSAPP_TOKEN")
+WHATSAPP_PHONE_ID=os.getenv("WHATSAPP_PHONE_ID")
+USER_PHONE_NUMBER=os.getenv("USER_PHONE_NUMBER")

@@ -72,7 +72,8 @@ a {
     <!-- Realtime Data (2 columns fluid) -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
 
-        <div id="phCard" class="p-6 rounded-xl border transition">
+        <!-- ph card -->
+        <div id="phCard" class="p-6 rounded-xl border transition outline">
             <div class="flex justify-between items-center mb-2">
                 <h2 class="text-lg font-semibold">pH Level</h2>
             </div>
@@ -96,7 +97,8 @@ a {
 
         </div>
 
-        <div id="tdsCard" class="p-6 rounded-xl border transition">
+        <!-- tds card -->
+        <div id="tdsCard" class="p-6 rounded-xl border transition outline">
             <h2 class="text-lg font-semibold mb-2">TDS</h2>
             <p class="text-4xl font-bold"><span id="tds">--</span> ppm</p>
 
@@ -113,7 +115,8 @@ a {
 
         </div>
 
-        <div id="tempCard" class="p-6 rounded-xl border transition">
+        <!-- temp card -->
+        <div id="tempCard" class="p-6 rounded-xl border transition outline">
             <h2 class="text-lg font-semibold mb-2">Air Temperature</h2>
             <p class="text-4xl font-bold"><span id="temp">--</span> °C</p>
 
@@ -129,7 +132,8 @@ a {
             </div>
         </div>
 
-        <div id="humidityCard" class="p-6 rounded-xl border transition">
+        <!-- humidity card -->
+        <div id="humidityCard" class="p-6 rounded-xl border transition outline">
             <h2 class="text-lg font-semibold mb-2">Humidity</h2>
             <p class="text-4xl font-bold"><span id="humidity">--</span> %</p>
 
@@ -145,12 +149,18 @@ a {
             </div>
         </div>
 
+        <!-- last update row -->
         <div class="flex items-center gap-2">
             <p class="text-sm font-extralight text-left italic">Last update:</p>
             <p class="text-sm font-extralight text-left italic" id="lastUpdate"></p>
         </div>
-
     </div>
+
+    <!-- Recommendations -->
+    <div id="recommendationsContainer" class="mt-4 space-y-3 mb-8"></div>
+
+
+
 
     <!-- Graphs Section -->
     <div class="space-y-8">
@@ -215,15 +225,15 @@ a {
 <script>
     const STATUS_STYLES = {
         good: {
-            card: ["bg-green-50", "border-green-300", "outline", "outline-green-500"],
+            card: ["bg-green-50", "border-green-300", "outline-green-500"],  //"outline"
             bar: "bg-green-500"
         },
         ok: {
-            card: ["bg-yellow-50", "border-yellow-300", "outline", "outline-yellow-500"],
+            card: ["bg-yellow-50", "border-yellow-300", "outline-yellow-500"], //, "outline"
             bar: "bg-yellow-500"
         },
         bad: {
-            card: ["bg-red-50", "border-red-300", "outline", "outline-red-500"],
+            card: ["bg-red-50", "border-red-300", "outline-red-500"],
             bar: "bg-red-500"
         }
     };
@@ -277,7 +287,7 @@ a {
                 data.airTemp, 
                 ranges.temp.scale_min, 
                 ranges.temp.scale_max, 
-                data.temp_status
+                data.airTemp_status
             );
 
             updateSensorCard("humidityCard", 
@@ -287,6 +297,8 @@ a {
                 ranges.humidity.scale_max, 
                 data.humidity_status
             );
+
+            renderRecommendations(data)
 
         } catch (err) {
             console.error("Fetch error:", err);
@@ -499,9 +511,9 @@ a {
 
         // Reset card colours
         card.classList.remove(
-            "bg-green-50","border-green-300",
-            "bg-yellow-50","border-yellow-300",
-            "bg-red-50","border-red-300"
+            "bg-green-50","border-green-300", "outline-green-500",
+            "bg-yellow-50", "border-yellow-300", "outline-yellow-500",
+            "bg-red-50", "border-red-300", "outline-red-500"
         );
 
         // Reset bar colours
@@ -589,6 +601,63 @@ a {
         document.getElementById("humidityMinText").textContent = `${ranges.humidity.scale_min}`
         document.getElementById("humidityOptimalText").textContent =
             `Optimal: ${ranges.humidity.opt_min} — ${ranges.humidity.opt_max}`;
+    }
+
+    function renderRecommendations(data) {
+        const container = document.getElementById("recommendationsContainer");
+        container.innerHTML = "";
+
+        // not including humidity
+        const sensors = ["ph", "tds", "temp", "humidity"];
+
+        // Sort sensors so 'bad' appears first, then 'ok', then 'good' (or skip good)
+        sensors.sort((a, b) => {
+            const statusOrder = { bad: 0, ok: 1, good: 2, unknown: 3 };
+            const statusA = data[`${a}_status`] || "unknown";
+            const statusB = data[`${b}_status`] || "unknown";
+            return statusOrder[statusA] - statusOrder[statusB];
+        });
+
+        sensors.forEach(sensor => {
+            const status = data[`${sensor}_status`];
+            const recommendation = data[`${sensor}_recommendation`];
+
+            if (status && status !== "good" && recommendation) {
+                const div = document.createElement("div");
+
+                let bgColor = "bg-yellow-100 border-yellow-400 text-yellow-700";
+                if (status === "bad") {
+                    bgColor = "bg-red-100 border-red-400 text-red-700";
+                }
+
+                div.className = `border-l-4 p-3 rounded ${bgColor}`;
+
+                div.innerHTML = `
+                    <strong class="font-bold antialiased">${sensor}</strong>:
+                    <span class="font-medium antialiased">${recommendation.short}</span>
+
+                    <details class="mt-1 text-sm">
+                        <summary class="cursor-pointer text-blue-600">
+                            Why & how?
+                        </summary>
+                        <p class="mt-1">
+                            ${recommendation.details.replace(/\n/g, "<br>")}
+                        </p>
+                    </details>
+                `;
+
+                // div.innerHTML = `
+                //     <strong class="capitalize">${sensor}</strong>:
+                //     <span></span>
+                //     <details>
+                //         <summary>View recommendation</summary>
+                //         <p>${recommendation.replace(/\n/g, "<br>")}</p>
+                //     </details>
+                // `;
+
+                container.appendChild(div);
+            }
+        });
     }
 
     document.addEventListener("DOMContentLoaded", async function () {
