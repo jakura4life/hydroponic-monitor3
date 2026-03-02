@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -168,8 +169,8 @@ EVAL_RANGES = {
         "ok": (5.0, 7.0),
     },
     "tds": {
-        "good": (100, 200),
-        "ok": (80, 250),
+        "good": (500, 800),
+        "ok": (400, 900),
     },
     "airTemp": {
         "good": (18, 24),
@@ -185,6 +186,13 @@ VALID_TIMEFRAME_RANGES = {"all", "7d", "3d", "1d", "12h"}
 
 # ----- Whatsapp messaging service
 
+ALERT_TOLERANCE=3
+REMINDER_INTERVAL=timedelta(hours=12)
+
 WHATSAPP_TOKEN=os.getenv("WHATSAPP_TOKEN")
 WHATSAPP_PHONE_ID=os.getenv("WHATSAPP_PHONE_ID")
 USER_PHONE_NUMBER=os.getenv("USER_PHONE_NUMBER")
+
+
+# ----- Timeout 
+DATA_TIMEOUT_SECONDS=600

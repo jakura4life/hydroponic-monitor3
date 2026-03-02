@@ -164,12 +164,13 @@ def process_alerts(reading_dict, feedback):
     for sensor, value in sensor_map.items():
         status = feedback.get(f"{sensor}_status")
         if status in ["bad", "ok"]:
+            recommendation = feedback.get(f"{sensor}_recommendation")
             message = (
                 f"{sensor.upper()} is outside safe range"
                 if status == "bad"
                 else f"{sensor.upper()} slightly out of optimal range"
             )
-            handle_alert(sensor, value, status, message)
+            handle_alert(sensor, value, status, message, recommendation)
 
         elif status == "good":
             resolve_alert(sensor)

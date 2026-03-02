@@ -1,5 +1,5 @@
 from sensor.repository.firebase_service import listen_to_current
-from sensor.models import SensorReading
+from sensor.models import SensorReading, SystemStatus
 from sensor.pipeline.feedback import evaluate_feedback
 
 
@@ -10,6 +10,12 @@ def handle_current_update(reading: SensorReading):
 
     # Convert Pydantic model to dict
     readings_dict = reading.model_dump()  # safer than vars() in v2
+
+    print(readings_dict)
+    SystemStatus.objects.update_or_create(
+        id=1,
+        defaults={"last_epoch": readings_dict["epoch"]}
+    )
 
     # Evaluate feedback
     feedback = evaluate_feedback(readings_dict)

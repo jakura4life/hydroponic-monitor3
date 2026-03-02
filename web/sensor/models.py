@@ -77,8 +77,9 @@ class Alert(models.Model):
     sensor = models.CharField(max_length=20, choices=SENSOR_CHOICES)
     severity = models.CharField(max_length=10)  # e.g., "ok", "bad"
     value = models.FloatField()
+    critical_count = models.IntegerField(default=0)
     message = models.TextField()
-    recommendation = models.TextField(null=True,default=None)
+    recommendation = models.JSONField(null=True,default=None) #change to json field to accept dict
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -95,3 +96,10 @@ class AlertNotification(models.Model):
 
     class Meta:
         db_table ='alert_notifications'
+
+class SystemStatus(models.Model):
+    last_epoch = models.BigIntegerField()
+    last_received_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'system_status'
