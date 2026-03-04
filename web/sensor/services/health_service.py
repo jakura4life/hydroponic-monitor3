@@ -3,7 +3,7 @@ import threading
 from django.utils import timezone
 from django.conf import settings
 from sensor.models import SystemHealthEvent, SystemStatus
-from sensor.services.whatsapp_service import send_system_whatsapp  
+from sensor.services.whatsapp_service import send_system_whatsapp, format_elapsed
 
 SYSTEM_TOLERANCE=settings.SYSTEM_TOLERANCE
 CHECK_INTERVAL=settings.CHECK_INTERVAL
@@ -103,3 +103,35 @@ def resolve_offline():
 
 def isSystemOffline():
     return IS_SYSTEM_OFFLINE
+
+
+def get_system_health():
+    active_event = SystemHealthEvent.objects.filter(
+        status='offline',
+        is_active=True
+    ).first()
+
+    latest_event = SystemHealthEvent.objects.order_by("-created_at").first()
+
+    payload = {
+        "is_offline": bool(active_event),
+        "active_event": None,
+        "latest_event": None,
+    }
+
+    if active_event:
+        payload["active_event"] = {
+            "started_at": active_event.created_at,
+            "elapsed": format_elapsed(int(active_event.elapsed)),
+        }
+
+    if latest_event:
+        payload["latest_event"] = {
+            "status": latest_event.status,
+            "started_at": latest_event.created_at,
+            "resolved_at": latest_event.resolved_at,
+            "elapsed": format_elapsed(int(latest_event.elapsed)),
+        }
+
+    return payload
+

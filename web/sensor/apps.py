@@ -12,7 +12,7 @@ class SensorConfig(AppConfig):
             return
         
         def start_background_services():
-            time.sleep(3)
+            time.sleep(1)
 
             from sensor.services.listen_service import start_current_listener
             from sensor.services.health_service import system_health_monitor

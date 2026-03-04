@@ -67,6 +67,9 @@ a {
     </div>
     {% endif %}
 
+    <!-- system health -->
+    <div id="systemHealthBanner" class="hidden"></div>
+
     <h1 class="text-3xl font-bold mb-6">Current Values</h1>
 
     <!-- Realtime Data (2 columns fluid) -->
@@ -190,27 +193,21 @@ a {
                 </a>
             </div>
         </div>
+    </div>
 
-        <!-- <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-xl font-semibold mb-4">pH Trend</h2>
-            <canvas id="phChart"></canvas>
+    <div class="card mt-4">
+        <div class="card-header">
+            System Health
         </div>
 
-        <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-xl font-semibold mb-4">TDS Trend</h2>
-            <canvas id="tdsChart"></canvas>
+        <div class="card-body">
+            <p class="fw-bold text-secondary mb-3 d-flex align-items-center">
+                <i class="bi bi-clock-history me-2"></i>
+                Recent Downtime Information
+            </p>
+
+            <div id="systemHealthCard"></div>
         </div>
-
-        <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-xl font-semibold mb-4">Temperature Trend</h2>
-            <canvas id="tempChart"></canvas>
-        </div>
-
-        <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-xl font-semibold mb-4">Humidity Trend</h2>
-            <canvas id="humidityChart"></canvas>
-        </div> -->
-
     </div>
 
 </div>
@@ -250,8 +247,10 @@ a {
     async function fetchCurrentData() {
         try {
             const response = await fetch("{% url 'current_api' %}");
-            const data = await response.json();
+            const raw_data = await response.json();
             const ranges = SENSOR_CONFIG.sensor_ranges;
+            const data = raw_data.latest_reading
+            const health = raw_data.system_health
 
             document.getElementById("ph").textContent = data.ph ? data.ph.toFixed(2) : "--";
             document.getElementById("tds").textContent = data.tds || "--";
@@ -285,8 +284,8 @@ a {
             updateSensorCard("tempCard", 
                 "tempBar", 
                 data.airTemp, 
-                ranges.temp.scale_min, 
-                ranges.temp.scale_max, 
+                ranges.airTemp.scale_min, 
+                ranges.airTemp.scale_max, 
                 data.airTemp_status
             );
 
@@ -297,6 +296,35 @@ a {
                 ranges.humidity.scale_max, 
                 data.humidity_status
             );
+
+            const banner = document.getElementById("systemHealthBanner");
+
+            if (health.is_offline) {
+                banner.className = "alert alert-danger";
+                banner.innerHTML = `
+                    System Offline <br>
+                    Downtime: ${formatElapsed(health.active_event.elapsed)}
+                `;
+            } else {
+                banner.className = "alert alert-success";
+                banner.innerHTML = "System Online";
+            }
+
+            const card = document.getElementById("systemHealthCard");
+
+            if (health.latest_event) {
+                card.innerHTML = `
+                    <p><strong>Status:</strong> ${health.latest_event.status}</p>
+                    <p><strong>Started:</strong> ${new Date(health.latest_event.started_at).toLocaleString()}</p>
+                    <p><strong>Resolved:</strong> ${
+                        health.latest_event.resolved_at
+                        ? new Date(health.latest_event.resolved_at).toLocaleString()
+                        : "Still ongoing"
+                    }</p>
+                    <p><strong>Total Downtime:</strong> ${health.latest_event.elapsed}</p>
+                `;
+            }
+
 
             renderRecommendations(data)
 
@@ -559,10 +587,10 @@ a {
 
         updateOptimumZone(
             "tempOptimum",
-            ranges.temp.opt_min,
-            ranges.temp.opt_max,
-            ranges.temp.scale_min,
-            ranges.temp.scale_max
+            ranges.airTemp.opt_min,
+            ranges.airTemp.opt_max,
+            ranges.airTemp.scale_min,
+            ranges.airTemp.scale_max
         );
 
         updateOptimumZone(
@@ -591,10 +619,10 @@ a {
             `Optimal: ${ranges.tds.opt_min} — ${ranges.tds.opt_max}`;
 
         // temp section
-        document.getElementById("tempMinText").textContent = `${ranges.temp.scale_min}`
-        document.getElementById("tempMaxText").textContent = `${ranges.temp.scale_max}`
+        document.getElementById("tempMinText").textContent = `${ranges.airTemp.scale_min}`
+        document.getElementById("tempMaxText").textContent = `${ranges.airTemp.scale_max}`
         document.getElementById("tempOptimalText").textContent =
-            `Optimal: ${ranges.temp.opt_min} — ${ranges.temp.opt_max}`;
+            `Optimal: ${ranges.airTemp.opt_min} — ${ranges.airTemp.opt_max}`;
 
         // humidity section
         document.getElementById("humidityMaxText").textContent = `${ranges.humidity.scale_max}`
@@ -608,7 +636,7 @@ a {
         container.innerHTML = "";
 
         // not including humidity
-        const sensors = ["ph", "tds", "temp", "humidity"];
+        const sensors = ["ph", "tds", "airTemp", "humidity"];
 
         // Sort sensors so 'bad' appears first, then 'ok', then 'good' (or skip good)
         sensors.sort((a, b) => {
@@ -665,10 +693,6 @@ a {
 
         fetchCurrentData();
         fetchHourlyData("3d");
-        // updateOptimumZone("phOptimum", 5.5, 6.5, 0, 14);
-        // updateOptimumZone("tdsOptimum", 500, 700, 0, 1000);
-        // updateOptimumZone("tempOptimum", 0, 24, 10, 40);
-        // updateOptimumZone("humidityOptimum", 50, 70, 0, 100);
 
         setInterval(fetchCurrentData, 60000);
         setInterval(fetchHourlyData, 3600000);

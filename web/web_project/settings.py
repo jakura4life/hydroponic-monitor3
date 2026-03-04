@@ -149,7 +149,7 @@ SENSOR_RANGES = {
         "scale_min": 0,
         "scale_max": 1000,
     },
-    "temp": {
+    "airTemp": {
         "opt_min": 18,
         "opt_max": 24,
         "scale_min": 0,

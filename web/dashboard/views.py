@@ -2,6 +2,7 @@ from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from sensor.services.hourly_service import get_hourly_data
 from sensor.services.listen_service import get_latest_reading
+from sensor.services.health_service import get_system_health
 from django.conf import settings
 from sensor.models import Alert
 
@@ -34,7 +35,13 @@ def hourly_data_api(request):
     return JsonResponse(payload, safe=False)
 
 def current_data_api(request):
-    return JsonResponse(get_latest_reading())
+    latest=get_latest_reading()
+    health=get_system_health()
+
+    return JsonResponse({
+        "latest_reading" : latest,
+        "system_health" : health
+    })
 
 def sensor_config_api(request):
     return JsonResponse({
