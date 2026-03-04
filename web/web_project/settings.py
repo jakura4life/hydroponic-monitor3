@@ -187,12 +187,19 @@ VALID_TIMEFRAME_RANGES = {"all", "7d", "3d", "1d", "12h"}
 # ----- Whatsapp messaging service
 
 ALERT_TOLERANCE=3
-REMINDER_INTERVAL=timedelta(hours=12)
+SENSOR_REMINDER_INTERVAL=timedelta(hours=12)
+# SENSOR_REMINDER_INTERVAL=timedelta(minutes=2)
+
 
 WHATSAPP_TOKEN=os.getenv("WHATSAPP_TOKEN")
 WHATSAPP_PHONE_ID=os.getenv("WHATSAPP_PHONE_ID")
 USER_PHONE_NUMBER=os.getenv("USER_PHONE_NUMBER")
 
 
-# ----- Timeout 
-DATA_TIMEOUT_SECONDS=600
+# ----- SYSTEM Timeout (if arduino crashes or esp32/8266 stop sending data) 
+SYSTEM_TOLERANCE=180 #in seconds # if data isn't receieve within the next 3min, flag as offline
+CHECK_INTERVAL=60 #60 seconds 
+SYSTEM_REMINDER_INTERVAL=timedelta(hours=6)
+# SYSTEM_REMINDER_INTERVAL=timedelta(minutes=2)
+
+

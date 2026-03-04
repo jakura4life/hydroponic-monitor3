@@ -1,17 +1,18 @@
 import requests
 from django.conf import settings
-from sensor.models import Alert
+from sensor.models import Alert, SystemHealthEvent
 import os
 
+URL = f"https://graph.facebook.com/v18.0/{settings.WHATSAPP_PHONE_ID}/messages"
 
-def send_whatsapp_message(alert : Alert, notification_type="initial"):
-    url = f"https://graph.facebook.com/v18.0/{settings.WHATSAPP_PHONE_ID}/messages"
-
-    headers = {
+HEADERS = {
         "Authorization": f"Bearer {settings.WHATSAPP_TOKEN}",
         "Content-Type": "application/json"
     }
 
+RECEIVER = settings.USER_PHONE_NUMBER
+
+def send_whatsapp_message(alert : Alert, notification_type="initial"):
     recommendation_details = ""
     if alert.recommendation and isinstance(alert.recommendation, dict):
         recommendation_details = alert.recommendation.get("details", "")
@@ -38,14 +39,80 @@ def send_whatsapp_message(alert : Alert, notification_type="initial"):
 
     payload = {
         "messaging_product": "whatsapp",
-        "to": settings.USER_PHONE_NUMBER,
+        "to": RECEIVER,
         "type": "text",
         "text": {
             "body": message_text
         }
     }
 
-    response = requests.post(url, json=payload, headers=headers)
-    print("Status:", response.status_code)
-    print("Body:", response.text)
+    response = requests.post(URL, json=payload, headers=HEADERS)
+    print("[WHATSAPP SERIVCE]", response.status_code)
     return response
+
+
+def send_system_whatsapp(sys_evnt :SystemHealthEvent, notification_type='initial'):
+    created_time = sys_evnt.created_at.strftime("%d %b %Y, %I:%M %p")
+    elapsed = format_elapsed(int(sys_evnt.elapsed))
+    if notification_type == "initial":
+        header = "*Arduino Offline*"
+        message_text = (
+            f"{header}\n\n"
+            f"Arduino is not sending data to Firebase database.\n\n"
+            f"_Detected at: {created_time}_"
+        )
+    elif notification_type == "resolved":
+        header = "*System Restored*"
+        message_text = (
+            f"{header}\n\n"
+            f"Arduino is back online.\n"
+            f"Duration: {elapsed}\n\n"
+
+            f"_Resolve at: {sys_evnt.resolved_at}_\n"
+            f"_Detected at: {created_time}_"
+        )
+    else:
+        header = "*System Reminder*"
+        message_text = (
+            f"{header}\n\n"
+            f"Arduino is still offline.\n"
+            f"Duration: {elapsed}\n\n"
+
+            f"_Detected at: {created_time}_"
+        )
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": RECEIVER,
+        "type": "text",
+        "text": {
+            "body": message_text
+        }
+    }
+
+    response = requests.post(URL, json=payload, headers=HEADERS)
+    print("[WHATSAPP SERIVCE]", response.status_code)
+    return response
+
+
+
+## util
+def format_elapsed(seconds: int) -> str:
+    if not seconds or seconds < 0:
+        return "0m"
+
+    days, remainder = divmod(seconds, 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, _ = divmod(remainder, 60)
+
+    parts = []
+
+    if days > 0:
+        parts.append(f"{days}day")
+
+    if hours > 0 or days > 0:
+        parts.append(f"{hours}hour")
+
+    parts.append(f"{minutes}min")
+
+    return " ".join(parts)

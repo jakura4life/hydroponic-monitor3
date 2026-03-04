@@ -103,3 +103,21 @@ class SystemStatus(models.Model):
     
     class Meta:
         db_table = 'system_status'
+
+class SystemHealthEvent(models.Model):
+    STATUS_CHOICES = [
+        ("online", "Online"),
+        ("offline", "Offline"),
+    ]
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    # message = models.TextField()
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField()
+    last_notified_at = models.DateTimeField(null=True,blank=True)
+    elapsed = models.BigIntegerField(default=0)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'system_event'
