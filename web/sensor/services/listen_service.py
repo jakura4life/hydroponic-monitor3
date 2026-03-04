@@ -5,9 +5,12 @@ import time
 
 LATEST_READING = {}
 STREAM = None
+RUN_ONCE = False
 
 def handle_current_update(reading: SensorReading):
-    global LATEST_READING
+    global LATEST_READING, RUN_ONCE
+    if RUN_ONCE==True:
+        return
 
     # Convert Pydantic model to dict
     readings_dict = reading.model_dump()  # safer than vars() in v2
@@ -20,6 +23,7 @@ def handle_current_update(reading: SensorReading):
 
     # Evaluate feedback
     feedback = evaluate_feedback(readings_dict)
+    # print (readings_dict)
 
     # Merge reading and feedback
     LATEST_READING = {
@@ -28,6 +32,8 @@ def handle_current_update(reading: SensorReading):
     }
 
     print("[REALTIME] new reading available")
+
+    RUN_ONCE=True
 
 def start_current_listener():
     # pass

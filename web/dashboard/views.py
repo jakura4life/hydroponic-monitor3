@@ -1,5 +1,5 @@
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from sensor.services.hourly_service import get_hourly_data
 from sensor.services.listen_service import get_latest_reading
 from sensor.services.health_service import get_system_health
@@ -9,6 +9,10 @@ from sensor.models import Alert
 
 
 # ------- Web Pages ----------
+def redirect_home(request):
+    return redirect('dashboard')
+
+
 def home_view(request):
     alerts = Alert.objects.filter(is_active=True)
     context = {

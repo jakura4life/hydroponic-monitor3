@@ -254,7 +254,7 @@ a {
 
             document.getElementById("ph").textContent = data.ph ? data.ph.toFixed(2) : "--";
             document.getElementById("tds").textContent = data.tds || "--";
-            document.getElementById("temp").textContent = data.airTemp ? data.airTemp.toFixed(1) : "--";
+            document.getElementById("temp").textContent = data.temperature ? data.temperature.toFixed(1) : "--";
             document.getElementById("humidity").textContent = data.humidity ? data.humidity.toFixed(1) : "--";
             document.getElementById("lastUpdate").textContent = data.datetime ? new Date(data.datetime).toLocaleString() : '--';
 
@@ -283,10 +283,10 @@ a {
 
             updateSensorCard("tempCard", 
                 "tempBar", 
-                data.airTemp, 
-                ranges.airTemp.scale_min, 
-                ranges.airTemp.scale_max, 
-                data.airTemp_status
+                data.temperature, 
+                ranges.temperature.scale_min, 
+                ranges.temperature.scale_max, 
+                data.temperature
             );
 
             updateSensorCard("humidityCard", 
@@ -303,7 +303,7 @@ a {
                 banner.className = "alert alert-danger";
                 banner.innerHTML = `
                     System Offline <br>
-                    Downtime: ${formatElapsed(health.active_event.elapsed)}
+                    Downtime: ${(health.active_event.elapsed)}
                 `;
             } else {
                 banner.className = "alert alert-success";
@@ -315,11 +315,9 @@ a {
             if (health.latest_event) {
                 card.innerHTML = `
                     <p><strong>Status:</strong> ${health.latest_event.status}</p>
-                    <p><strong>Started:</strong> ${new Date(health.latest_event.started_at).toLocaleString()}</p>
+                    <p><strong>Started:</strong> ${health.latest_event.started_at}</p>
                     <p><strong>Resolved:</strong> ${
-                        health.latest_event.resolved_at
-                        ? new Date(health.latest_event.resolved_at).toLocaleString()
-                        : "Still ongoing"
+                        health.latest_event.resolved_at || "Still ongoing"
                     }</p>
                     <p><strong>Total Downtime:</strong> ${health.latest_event.elapsed}</p>
                 `;
@@ -587,10 +585,10 @@ a {
 
         updateOptimumZone(
             "tempOptimum",
-            ranges.airTemp.opt_min,
-            ranges.airTemp.opt_max,
-            ranges.airTemp.scale_min,
-            ranges.airTemp.scale_max
+            ranges.temperature.opt_min,
+            ranges.temperature.opt_max,
+            ranges.temperature.scale_min,
+            ranges.temperature.scale_max
         );
 
         updateOptimumZone(
@@ -619,10 +617,10 @@ a {
             `Optimal: ${ranges.tds.opt_min} — ${ranges.tds.opt_max}`;
 
         // temp section
-        document.getElementById("tempMinText").textContent = `${ranges.airTemp.scale_min}`
-        document.getElementById("tempMaxText").textContent = `${ranges.airTemp.scale_max}`
+        document.getElementById("tempMinText").textContent = `${ranges.temperature.scale_min}`
+        document.getElementById("tempMaxText").textContent = `${ranges.temperature.scale_max}`
         document.getElementById("tempOptimalText").textContent =
-            `Optimal: ${ranges.airTemp.opt_min} — ${ranges.airTemp.opt_max}`;
+            `Optimal: ${ranges.temperature.opt_min} — ${ranges.temperature.opt_max}`;
 
         // humidity section
         document.getElementById("humidityMaxText").textContent = `${ranges.humidity.scale_max}`
@@ -636,7 +634,7 @@ a {
         container.innerHTML = "";
 
         // not including humidity
-        const sensors = ["ph", "tds", "airTemp", "humidity"];
+        const sensors = ["ph", "tds", "temperature", "humidity"];
 
         // Sort sensors so 'bad' appears first, then 'ok', then 'good' (or skip good)
         sensors.sort((a, b) => {
@@ -659,9 +657,9 @@ a {
                 }
 
                 div.className = `border-l-4 p-3 rounded ${bgColor}`;
-
+                const formattedSensor = sensor.charAt(0).toUpperCase() + sensor.slice(1);
                 div.innerHTML = `
-                    <strong class="font-bold antialiased">${sensor}</strong>:
+                    <strong class="font-bold antialiased">${formattedSensor}</strong>:
                     <span class="font-medium antialiased">${recommendation.short}</span>
 
                     <details class="mt-1 text-sm">

@@ -149,7 +149,7 @@ SENSOR_RANGES = {
         "scale_min": 0,
         "scale_max": 1000,
     },
-    "airTemp": {
+    "temperature": {
         "opt_min": 18,
         "opt_max": 24,
         "scale_min": 0,
@@ -172,7 +172,7 @@ EVAL_RANGES = {
         "good": (500, 800),
         "ok": (400, 900),
     },
-    "airTemp": {
+    "temperature": {
         "good": (18, 24),
         "ok": (15, 28),
     },
@@ -198,8 +198,10 @@ USER_PHONE_NUMBER=os.getenv("USER_PHONE_NUMBER")
 
 # ----- SYSTEM Timeout (if arduino crashes or esp32/8266 stop sending data) 
 SYSTEM_TOLERANCE=180 #in seconds # if data isn't receieve within the next 3min, flag as offline
+# SYSTEM_TOLERANCE=90 #test
+
 CHECK_INTERVAL=60 #60 seconds 
 SYSTEM_REMINDER_INTERVAL=timedelta(hours=6)
-# SYSTEM_REMINDER_INTERVAL=timedelta(minutes=2)
+# SYSTEM_REMINDER_INTERVAL=timedelta (minutes=2)
 
 

@@ -39,7 +39,7 @@ def calculate_hourly_average(normalize_list: list):
     for hour_epoch, readings in buckets.items():
         ph_values = [r.ph for r in readings if r.ph is not None]
         tds_values = [r.tds for r in readings if r.tds is not None]
-        temp_values = [r.airTemp for r in readings if r.airTemp is not None]
+        temp_values = [r.temperature for r in readings if r.temperature is not None]
         humidity_values = [r.humidity for r in readings if r.humidity is not None]
 
         hourly_results.append(

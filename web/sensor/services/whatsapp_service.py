@@ -22,7 +22,7 @@ def send_whatsapp_message(alert : Alert, notification_type="initial"):
     else:
         header = "Ongoing Hydroponic Alert Reminder"
 
-    update_format=alert.updated_at.strftime("%I:%M %p")
+    update_format=alert.updated_at.strftime("%H:%M")
 
     message_text = (
         f"*{header}*\n"
@@ -32,7 +32,7 @@ def send_whatsapp_message(alert : Alert, notification_type="initial"):
         # f"Message: {alert.message}\n\n"
         f"*Recommendation:*\n"
         f"{recommendation_details}\n\n\n" 
-        f"_Alert created at: {alert.created_at.strftime('%d %b, %I:%M %p')}_\n"
+        f"_Alert created at: {alert.created_at.strftime("%d %b %Y, %H:%M")}_\n"
         f"_Data last updated at: ({update_format})_\n"
 
     )
@@ -52,7 +52,7 @@ def send_whatsapp_message(alert : Alert, notification_type="initial"):
 
 
 def send_system_whatsapp(sys_evnt :SystemHealthEvent, notification_type='initial'):
-    created_time = sys_evnt.created_at.strftime("%d %b %Y, %I:%M %p")
+    created_time = sys_evnt.created_at.strftime("%d %b %Y, %H:%M")
     elapsed = format_elapsed(int(sys_evnt.elapsed))
     if notification_type == "initial":
         header = "*Arduino Offline*"
@@ -62,13 +62,14 @@ def send_system_whatsapp(sys_evnt :SystemHealthEvent, notification_type='initial
             f"_Detected at: {created_time}_"
         )
     elif notification_type == "resolved":
+        resolve_time = sys_evnt.resolved_at.strftime("%d %b %Y, %H:%M")
         header = "*System Restored*"
         message_text = (
             f"{header}\n\n"
             f"Arduino is back online.\n"
             f"Duration: {elapsed}\n\n"
 
-            f"_Resolve at: {sys_evnt.resolved_at}_\n"
+            f"_Resolve at: {resolve_time}_\n"
             f"_Detected at: {created_time}_"
         )
     else:

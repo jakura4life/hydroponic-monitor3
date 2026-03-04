@@ -88,7 +88,6 @@ def resolve_offline():
     if not existing:
         return
     
-    response=send_system_whatsapp(existing, notification_type="resolved")
     
 
     now = timezone.now()
@@ -96,9 +95,12 @@ def resolve_offline():
     existing.is_active = False
     existing.resolved_at = now
     existing.elapsed = (timezone.now() - existing.created_at).total_seconds()
+    response=send_system_whatsapp(existing, notification_type="resolved")
     existing.last_notified_at = now if response.status_code==200 else None
 
     existing.save()
+
+
 
 
 def isSystemOffline():
@@ -128,8 +130,8 @@ def get_system_health():
     if latest_event:
         payload["latest_event"] = {
             "status": latest_event.status,
-            "started_at": latest_event.created_at,
-            "resolved_at": latest_event.resolved_at,
+            "started_at": latest_event.created_at.strftime("%d %b %Y, %H:%M") if latest_event.created_at else None,
+            "resolved_at": latest_event.resolved_at.strftime("%d %b %Y, %H:%M") if latest_event.resolved_at else None,
             "elapsed": format_elapsed(int(latest_event.elapsed)),
         }
 

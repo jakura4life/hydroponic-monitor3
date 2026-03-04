@@ -21,7 +21,7 @@ def evaluate_feedback(reading_dict):
     ranges = settings.EVAL_RANGES
 
     # Evaluate each sensor
-    for sensor in ["ph", "tds", "airTemp", "humidity"]:
+    for sensor in ["ph", "tds", "temperature", "humidity"]:
         value = reading_dict.get(sensor)
         sensor_ranges = ranges[sensor]
 
@@ -31,8 +31,8 @@ def evaluate_feedback(reading_dict):
         recommendation = generate_recommendation(sensor, value, status)
         feedback[f"{sensor}_recommendation"] = recommendation
 
-        if sensor=="airTemp":
-            print("ASASASSA", value, status, recommendation)
+        # if sensor=="temperature":
+        #     print("ASASASSA", value, status, recommendation)
 
     # Process alerts for sensors
     process_alerts(reading_dict, feedback)
@@ -104,8 +104,8 @@ def generate_recommendation(sensor, value, status):
                     "Add clean water to reduce concentration of the solution."
                 )
             }
-    elif sensor == "airTemp":
-        if value < settings.EVAL_RANGES["airTemp"]["good"][0]:
+    elif sensor == "temperature":
+        if value < settings.EVAL_RANGES["temperature"]["good"][0]:
             return {
                 "short": "Increase temperature",
                 "details": (
@@ -156,17 +156,10 @@ def process_alerts(reading_dict, feedback):
     """
     dashboard top bar alerts
     """
-    # sensor_map = {
-    #     "pH": reading_dict.get("ph"),
-    #     "TDS": reading_dict.get("tds"),
-    #     "Temperature": reading_dict.get("airTemp"),
-    #     "Humidity": reading_dict.get("humidity"),
-    # }
-
     sensor_map = {
         "ph": reading_dict.get("ph"),
         "tds": reading_dict.get("tds"),
-        "airTemp": reading_dict.get("airTemp"),
+        "temperature": reading_dict.get("temperature"),
         "humidity": reading_dict.get("humidity"),
     }
 
@@ -179,7 +172,6 @@ def process_alerts(reading_dict, feedback):
                 if status == "bad"
                 else f"{sensor.upper()} slightly out of optimal range"
             )
-            print (sensor)
             handle_alert(sensor, value, status, message, recommendation)
 
         elif status == "good":

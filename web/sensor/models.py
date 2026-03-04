@@ -9,7 +9,7 @@ class SensorReading(BaseModel):
     datetime: datetime
     ph: float = Field(ge=0, le=14)
     tds: float | None = None
-    airTemp: float | None = None
+    temperature: float | None = None
     humidity: float | None = None
 
     # --- Factory Methods ---
@@ -21,7 +21,7 @@ class SensorReading(BaseModel):
             tds=data["TDS"],
             ph=data["pH"],
             humidity=data["humidity"],
-            airTemp=data["temperature"],
+            temperature=data["temperature"],
         )
 
     @classmethod
@@ -32,7 +32,7 @@ class SensorReading(BaseModel):
             tds=data["TDS"],
             ph=data["pH"],
             humidity=data["humidity"],
-            airTemp=data["temperature"],
+            temperature=data["temperature"],
         )
     
 class HourlyAggregate(BaseModel):
@@ -68,10 +68,10 @@ class Alert(models.Model):
     2. Once resolved, is_active is false. The next time the sensor goes opt range, create new alert
     '''
     SENSOR_CHOICES = [
-        ("ph", "pH"),
-        ("tds", "TDS"),
-        ("temp", "Temperature"),
-        ("humidity", "Humidity"),
+    ("ph", "pH"),
+    ("tds", "TDS"),
+    ("temperature", "Temperature"),
+    ("humidity", "Humidity"),
     ]
 
     sensor = models.CharField(max_length=20, choices=SENSOR_CHOICES)
