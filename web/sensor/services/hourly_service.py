@@ -39,26 +39,7 @@ def range_to_start_epoch(range_label):
     elif range_label == "7d":
         return now - 7 * 24 * 3600
     elif range_label == "all":
-        return None  # or earliest timestamp # was "0"
+        return None  
     else:
         raise ValueError("Invalid range")
 
-
-# def range_to_start_epoch(range_label):
-#     now = int(time.time())
-    
-#     # if range_label not in settings.VALID_TIMEFRAME_RANGES:
-
-#     if range_label == "12h":
-#         return now - 12 * 3600
-#     elif range_label == "1d":
-#         return now - 24 * 3600
-#     elif range_label == "3d":
-#         return now - 3 * 24 * 3600
-#     elif range_label == "7d":
-#         return now - 7 * 24 * 3600
-#     elif range_label == "all":
-#         return 0  # or earliest timestamp
-#     else:
-#         raise 
-        

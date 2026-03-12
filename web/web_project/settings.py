@@ -133,6 +133,11 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 
+# ---------------System Settings ----------------
+
+## ------------- Processing --------------
+USE_EMA = True
+EMA_ALPHA = 0.2
 
 ## ------------- Sensor/Web config --------------
 
@@ -184,24 +189,28 @@ EVAL_RANGES = {
 
 VALID_TIMEFRAME_RANGES = {"all", "7d", "3d", "1d", "12h"}
 
-# ----- Whatsapp messaging service
+## ----- Whatsapp messaging service --------------
 
 ALERT_TOLERANCE=3
 SENSOR_REMINDER_INTERVAL=timedelta(hours=12)
-# SENSOR_REMINDER_INTERVAL=timedelta(minutes=2)
-
 
 WHATSAPP_TOKEN=os.getenv("WHATSAPP_TOKEN")
 WHATSAPP_PHONE_ID=os.getenv("WHATSAPP_PHONE_ID")
 USER_PHONE_NUMBER=os.getenv("USER_PHONE_NUMBER")
 
 
-# ----- SYSTEM Timeout (if arduino crashes or esp32/8266 stop sending data) 
+## ----- SYSTEM Timeout (if arduino crashes or esp32/8266 stop sending data)  ------------
+CHECK_INTERVAL=60 #60 seconds 
+
 SYSTEM_TOLERANCE=180 #in seconds # if data isn't receieve within the next 3min, flag as offline
+SYSTEM_REMINDER_INTERVAL=timedelta(hours=6)
+
+## ------------ testing values --------------
+# SENSOR_REMINDER_INTERVAL=timedelta(minutes=2)
+
+
+# SYSTEM_REMINDER_INTERVAL=timedelta(minutes=2)
 # SYSTEM_TOLERANCE=90 #test
 
-CHECK_INTERVAL=60 #60 seconds 
-SYSTEM_REMINDER_INTERVAL=timedelta(hours=6)
-# SYSTEM_REMINDER_INTERVAL=timedelta (minutes=2)
 
 

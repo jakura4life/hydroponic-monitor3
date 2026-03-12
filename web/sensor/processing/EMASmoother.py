@@ -1,5 +1,8 @@
+from django.conf import settings
+EMA_ALPHA = settings.EMA_ALPHA
+
 class EMASmoother:
-    def __init__(self, alpha=0.2):
+    def __init__(self, alpha=EMA_ALPHA):
         self.alpha = alpha
         self.ema = None
 

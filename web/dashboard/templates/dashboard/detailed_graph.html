@@ -72,7 +72,7 @@ async function loadDetailedData() {
         SENSOR_RANGES = config.sensor_ranges
         phChart = createChart("phChart", "pH", phPoints, SENSOR_RANGES.ph.opt_min, SENSOR_RANGES.ph.opt_max);
         tdsChart = createChart("tdsChart", "TDS", tdsPoints, SENSOR_RANGES.tds.opt_min, SENSOR_RANGES.tds.opt_max);
-        tempChart = createChart("tempChart", "Temperature", tempPoints, SENSOR_RANGES.temp.opt_min, SENSOR_RANGES.temp.opt_max);
+        tempChart = createChart("tempChart", "Temperature", tempPoints, SENSOR_RANGES.temperature.opt_min, SENSOR_RANGES.temperature.opt_max);
 
     } catch (err) {
         console.error("Detailed graph load error:", err);
