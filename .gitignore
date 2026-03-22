@@ -36,3 +36,5 @@ web/data/services/firebase/serviceAccount.json
 *.env
 *serviceAccount.json
 backup.html
+web/pip.txt
+*.DS_Store

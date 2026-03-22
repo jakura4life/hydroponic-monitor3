@@ -79,7 +79,7 @@ void readSensorsAndSend() {
 
   // pH Sensor
   int phRaw = analogRead(PH_PIN);
-  float phVoltage = phRaw * VREF / 1023.0;
+  float phVoltage = phRaw * VREF / 1024.0; // change from 1023
   float phValue = phSlope * phVoltage + phIntercept;
 
   // TDS sensor
@@ -98,7 +98,7 @@ void readSensorsAndSend() {
 
 
   // Send to ESP8266
-  // Format: SENSOR:temp,humidity,pH,TDS
+  // Format: UPLOAD:temp,humidity,pH,TDS
   String data = "UPLOAD:";
   data += String(airTemp, 1) + ",";
   data += String(humidity, 1) + ",";
