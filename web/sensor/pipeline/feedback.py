@@ -92,7 +92,8 @@ def generate_recommendation(sensor, value, status):
                 "details": (
                     "TDS sensor measures the concentration of solutes in the water\n"
                     "Low TDS means insufficient dissolved nutrients in the water.\n\n"
-                    "Add more hydroponic nutrient solution to the water."
+                    "You can:\n"
+                    "-  Add more hydroponic nutrient solution to the water."
                 )
             }
         else:
@@ -101,7 +102,8 @@ def generate_recommendation(sensor, value, status):
                 "details": (
                     "TDS sensor measures the concentration of solutes in the water\n"
                     "High TDS may cause nutrient burn, causing disclouration on leafs as well as brown and slimy roots\n\n"
-                    "Add clean water to reduce concentration of the solution."
+                    "You can:\n"
+                    "-  Add clean water to reduce concentration of the solution."
                 )
             }
     elif sensor == "temperature":
@@ -111,7 +113,7 @@ def generate_recommendation(sensor, value, status):
                 "details": (
                     "Hydroponics usally works best at 18 to 25 celcius.\n"
                     "Temperature outside this range cause solution reading (particularly TDS/EC) to be inaccurate.\n\n"
-                    "you can:\n"
+                    "You can:\n"
                     "-  Turn on heaters to help warm up the environmental temperature"
 
                 )
@@ -122,7 +124,7 @@ def generate_recommendation(sensor, value, status):
                 "details": (
                     "Hydroponics usally works best at 18 to 25 celcius.\n"
                     "Temperature outside this range cause solution reading (particularly TDS/EC) to be inaccurate.\n\n"
-                    "you can:"
+                    "You can:"
                     "-  Improve cooling via a fan"
                     "-  Improve ventalation (such as opening a window)"
                 )
@@ -134,7 +136,7 @@ def generate_recommendation(sensor, value, status):
                 "details": (
                     "Humidity indicates the amount of moisture present in the air\n"
                     "High humidity can lead to the growth of mold and fungi\n\n"
-                    "you can:"
+                    "You can:"
                     "-  Increase humidity via reducing ventilation (closing windows) if you think the indooor humidity is higher than outside.\n"
                     "-  Turn on humidifier."
                 )

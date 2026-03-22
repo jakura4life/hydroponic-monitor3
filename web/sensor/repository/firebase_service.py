@@ -48,7 +48,10 @@ def fetch_history_from_firebase(start_epoch=None):
     readings = []
 
     for epoch, payload in raw.items():
-        readings.append(SensorReading.from_history(epoch,payload))
+        try:
+            readings.append(SensorReading.from_history(epoch,payload))
+        except Exception:
+            continue
     
     return readings
 

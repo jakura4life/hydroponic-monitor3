@@ -13,10 +13,10 @@ def process_hourly(readings):
     normalize_list = []
 
     for reading in readings:
-        if is_valid(reading):
-            if USE_EMA:
-                reading = normalize_ph(reading, ema)
-            normalize_list.append(reading)
+        # if is_valid(reading):
+        if USE_EMA:
+            reading = normalize_ph(reading, ema)
+        normalize_list.append(reading)
 
     hourly_data = calculate_hourly_average(normalize_list)
 

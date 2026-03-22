@@ -8,6 +8,7 @@ from sensor.services.health_service import isSystemOffline
 SENSOR_REMINDER_INTERVAL=settings.SENSOR_REMINDER_INTERVAL #12h
 ALERT_TOLERANCE=settings.ALERT_TOLERANCE
 
+# not in use
 def trigger_alert(sensor, value, severity, message):
     existing = Alert.objects.filter(sensor=sensor, is_active=True).first()
     if existing:
@@ -58,6 +59,7 @@ def handle_alert(sensor, value, status, message, recommendation):
             existing_alert.critical_count += 1
     else:
         existing_alert.critical_count = 0
+        existing_alert.notified_critical = False
 
     #2. notified via whatsapp if severity moves from warning to critical but only for the first time.
     existing_alert.value = value
@@ -65,9 +67,22 @@ def handle_alert(sensor, value, status, message, recommendation):
     existing_alert.severity = severity
     existing_alert.save()
 
-    if severity == "critical" and should_send_notification(existing_alert) and existing_alert.critical_count >= ALERT_TOLERANCE and not isSystemOffline():
-        send_and_log(existing_alert)
-        return
+    if severity == "critical" and existing_alert.critical_count >= ALERT_TOLERANCE and not isSystemOffline():
+
+        # intial
+        if not existing_alert.notified_critical and existing_alert.has_sent_intial == False:
+            send_and_log(existing_alert,notification_type='initial')
+            existing_alert.notified_critical = True
+            existing_alert.has_sent_intial = True
+            existing_alert.save()
+
+        # reminder
+        if should_send_notification(existing_alert) and existing_alert.has_sent_intial == True:
+            send_and_log(existing_alert,notification_type='reminder')
+
+    # if severity == "critical" and should_send_notification(existing_alert) and existing_alert.critical_count >= ALERT_TOLERANCE and not isSystemOffline():
+    #     send_and_log(existing_alert)
+    #     return
     return
     
 
@@ -87,10 +102,10 @@ def should_send_notification(alert):
 
     return timezone.now() - last_notification.sent_at >= SENSOR_REMINDER_INTERVAL
 
-def send_and_log(alert : Alert):
+def send_and_log(alert : Alert, notification_type="initial"):
 
     print("WHATSAPP_ALERT: sending out SENSOR alert.")
-    response = send_whatsapp_message(alert)
+    response = send_whatsapp_message(alert, notification_type)
 
     AlertNotification.objects.create(
         alert=alert,

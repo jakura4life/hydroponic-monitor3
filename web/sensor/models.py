@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from django.db import models
 from datetime import datetime,timezone
 from django.conf import settings
@@ -11,6 +11,23 @@ class SensorReading(BaseModel):
     tds: float | None = None
     temperature: float | None = None
     humidity: float | None = None
+
+
+    # --- Validators ----
+    @field_validator("tds")
+    @classmethod
+    def validate_tds(cls, v):
+        if v is not None and v < 0:
+            raise ValueError("TDS must be >= 0")
+        return v
+
+    @field_validator("humidity")
+    @classmethod
+    def validate_humidity(cls, v):
+        if v is not None and not (0 <= v <= 100):
+            raise ValueError("Humidity must be between 0 and 100")
+        return v
+
 
     # --- Factory Methods ---
     @classmethod
@@ -84,6 +101,7 @@ class Alert(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     notified_critical = models.BooleanField(default=False)
+    has_sent_intial = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'alert'

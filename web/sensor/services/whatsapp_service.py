@@ -33,7 +33,7 @@ def send_whatsapp_message(alert : Alert, notification_type="initial"):
         f"*Recommendation:*\n"
         f"{recommendation_details}\n\n\n" 
         f"_Alert created at: {alert.created_at.strftime("%d %b %Y, %H:%M")}_\n"
-        f"_Data last updated at: ({update_format})_\n"
+        f"_Data last updated at: {update_format}_\n"
 
     )
 

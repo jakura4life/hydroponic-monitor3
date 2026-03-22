@@ -191,7 +191,7 @@ VALID_TIMEFRAME_RANGES = {"all", "7d", "3d", "1d", "12h"}
 
 ## ----- Whatsapp messaging service --------------
 
-ALERT_TOLERANCE=3
+ALERT_TOLERANCE=5
 SENSOR_REMINDER_INTERVAL=timedelta(hours=12)
 
 WHATSAPP_TOKEN=os.getenv("WHATSAPP_TOKEN")
