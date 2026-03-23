@@ -10,6 +10,6 @@ class EMASmoother:
         if self.ema is None:
             self.ema = value
         else:
-            self.ema = self.alpha * value + (1 - self.alpha) * self.ema
+            self.ema = (self.alpha * value) + ((1 - self.alpha) * self.ema)
         return self.ema
     

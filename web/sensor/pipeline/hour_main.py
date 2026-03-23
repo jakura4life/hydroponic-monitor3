@@ -1,4 +1,4 @@
-from sensor.processing.normalization import normalize_ph, is_valid
+from sensor.processing.normalization import normalize_ph
 from sensor.processing.EMASmoother import EMASmoother
 from sensor.models import HourlyAggregate
 from collections import defaultdict
@@ -6,17 +6,16 @@ from statistics import mean
 from django.conf import settings
 
 USE_EMA = settings.USE_EMA
-ema = EMASmoother()
 
 # should only process not fetch
 def process_hourly(readings):
     normalize_list = []
+    ema = EMASmoother()
 
     for reading in readings:
-        # if is_valid(reading):
         if USE_EMA:
-            reading = normalize_ph(reading, ema)
-        normalize_list.append(reading)
+            smooth_reading = normalize_ph(reading, ema)
+        normalize_list.append(smooth_reading)
 
     hourly_data = calculate_hourly_average(normalize_list)
 
