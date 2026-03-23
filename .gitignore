@@ -38,3 +38,5 @@ web/data/services/firebase/serviceAccount.json
 backup.html
 web/pip.txt
 *.DS_Store
+
+*__pycache__

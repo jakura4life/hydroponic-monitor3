@@ -7,7 +7,7 @@ from typing import ClassVar
 class SensorReading(BaseModel):
     epoch: int
     datetime: datetime
-    ph: float = Field(ge=0, le=14)
+    ph: float = Field(default=None, ge=0, le=14)
     tds: float | None = None
     temperature: float | None = None
     humidity: float | None = None
