@@ -228,12 +228,16 @@ a {
             bar: "bg-green-500"
         },
         ok: {
-            card: ["bg-yellow-50", "border-yellow-300", "outline-yellow-500"], //, "outline"
+            card: ["bg-yellow-50", "border-yellow-300", "outline-yellow-500"],
             bar: "bg-yellow-500"
         },
         bad: {
             card: ["bg-red-50", "border-red-300", "outline-red-500"],
             bar: "bg-red-500"
+        },
+        invalid: {
+            card: ["bg-purple-50", "border-purple-300", "outline-purple-500"],
+            bar: "bg-purple-500",
         }
     };
 
@@ -541,7 +545,8 @@ a {
         card.classList.remove(
             "bg-green-50","border-green-300", "outline-green-500",
             "bg-yellow-50", "border-yellow-300", "outline-yellow-500",
-            "bg-red-50", "border-red-300", "outline-red-500"
+            "bg-red-50", "border-red-300", "outline-red-500",
+            "bg-purple-50", "border-purple-300", "outline-purple-500"
         );
 
         // Reset bar colours
@@ -640,7 +645,9 @@ a {
 
         // Sort sensors so 'bad' appears first, then 'ok', then 'good' (or skip good)
         sensors.sort((a, b) => {
-            const statusOrder = { bad: 0, ok: 1, good: 2, unknown: 3 };
+            // const statusOrder = { bad: 1, ok: 1, good: 2, invalid: 3 };
+            const statusOrder = {invalid: 0, bad: 1, ok: 2, good: 3};
+
             const statusA = data[`${a}_status`] || "unknown";
             const statusB = data[`${b}_status`] || "unknown";
             return statusOrder[statusA] - statusOrder[statusB];
@@ -653,13 +660,20 @@ a {
             if (status && status !== "good" && recommendation) {
                 const div = document.createElement("div");
 
-                let bgColor = "bg-yellow-100 border-yellow-400 text-yellow-700";
+                if (status === "ok") {
+                    bgColor = "bg-yellow-100 border-yellow-400 text-yellow-700";
+                }
                 if (status === "bad") {
                     bgColor = "bg-red-100 border-red-400 text-red-700";
                 }
+                if (status === "invalid") {
+                    bgColor = "bg-purple-100 border-purple-400 text-purple-700";
+                }
 
                 div.className = `border-l-4 p-3 rounded ${bgColor}`;
-                const formattedSensor = sensor.charAt(0).toUpperCase() + sensor.slice(1);
+                // const formattedSensor = sensor.charAt(0).toUpperCase() + sensor.slice(1);
+                const formattedSensor = sensor.toLocaleUpperCase()
+
                 div.innerHTML = `
                     <strong class="font-bold antialiased">${formattedSensor}</strong>:
                     <span class="font-medium antialiased">${recommendation.short}</span>
@@ -673,16 +687,6 @@ a {
                         </p>
                     </details>
                 `;
-
-                // div.innerHTML = `
-                //     <strong class="capitalize">${sensor}</strong>:
-                //     <span></span>
-                //     <details>
-                //         <summary>View recommendation</summary>
-                //         <p>${recommendation.replace(/\n/g, "<br>")}</p>
-                //     </details>
-                // `;
-
                 container.appendChild(div);
             }
         });

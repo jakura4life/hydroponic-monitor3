@@ -34,7 +34,7 @@ def monitor_loop():
             print(f"[HEALTH SERVICE] time since last reading {second_since} seconds.")
             if second_since > SYSTEM_TOLERANCE:
                 IS_SYSTEM_OFFLINE = True
-                trigger_offline(latest)
+                trigger_offline(latest, second_since)
             else:
                 IS_SYSTEM_OFFLINE = False
                 resolve_offline()
@@ -44,7 +44,7 @@ def monitor_loop():
 
         time.sleep(CHECK_INTERVAL)
 
-def trigger_offline(latest : SystemStatus):
+def trigger_offline(latest : SystemStatus, elapsed : int):
     existing = SystemHealthEvent.objects.filter(
         status="offline",
         is_active=True
@@ -56,7 +56,8 @@ def trigger_offline(latest : SystemStatus):
             status="offline",
             is_active=True,
             created_at = latest.last_received_at,
-            last_notified_at=None
+            last_notified_at=None,
+            elapsed = elapsed
         )
 
         response=send_system_whatsapp(event, notification_type="initial")
@@ -65,9 +66,12 @@ def trigger_offline(latest : SystemStatus):
             event.save()
         return
     
+    existing.elapsed = elapsed
+    existing.save()
+    
     if existing.last_notified_at:
         time_since_last_notif = now - existing.last_notified_at
-        print (time_since_last_notif)
+        # print (time_since_last_notif)
 
         if time_since_last_notif >= SYSTEM_REMINDER_INTERVAL:
             existing.elapsed = (now - existing.created_at).total_seconds()

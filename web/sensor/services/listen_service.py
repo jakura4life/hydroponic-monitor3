@@ -41,3 +41,14 @@ def start_current_listener():
 
 def get_latest_reading():
     return LATEST_READING
+
+def test_system_health():
+    from sensor.repository.firebase_service import safe_sensor_reading
+    from sensor.models import SensorReading
+    case = {"temperature": 12, "pH": 7, "TDS": -10, "humidity": 50, "epoch": 1769880335, "datetime": "2026-01-31T17:25:35Z"}
+
+    reading = safe_sensor_reading(SensorReading.from_current,case)
+
+    handle_current_update(reading)
+
+# test_system_health()

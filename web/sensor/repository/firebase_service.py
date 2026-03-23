@@ -109,13 +109,13 @@ def safe_sensor_reading(factory_func, *args, **kwargs):
             return None
     
 
-bad_data_cases = [
-    {"temperature": 12, "pH": 7, "TDS": -10, "humidity": 50, "epoch": 120, "datetime": "2026-03-23T20:23:39Z"},     # invalid TDS
-    {"temperature": 12, "pH": 15, "TDS": 300, "humidity": 50, "epoch": 120, "datetime": "2026-03-23T20:23:39Z"},    # invalid pH
-    {"temperature": 12, "pH": 6.5, "TDS": 300, "humidity": 150, "epoch": 120, "datetime": "2026-03-23T20:23:39Z"},  # invalid humidity
-]
+# bad_data_cases = [
+#     {"temperature": 12, "pH": 7, "TDS": -10, "humidity": 50, "epoch": 120, "datetime": "2026-03-23T20:23:39Z"},     # invalid TDS
+#     {"temperature": 12, "pH": 15, "TDS": 300, "humidity": 50, "epoch": 120, "datetime": "2026-03-23T20:23:39Z"},    # invalid pH
+#     {"temperature": 12, "pH": 6.5, "TDS": 300, "humidity": 150, "epoch": 120, "datetime": "2026-03-23T20:23:39Z"},  # invalid humidity
+# ]
 
-for case in bad_data_cases:
-    reading = safe_sensor_reading(SensorReading.from_current, case)
-    print(reading)
+# for case in bad_data_cases:
+#     reading = safe_sensor_reading(SensorReading.from_current, case)
+#     print(reading)
     

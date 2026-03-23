@@ -23,16 +23,17 @@ def evaluate_feedback(reading_dict):
     # Evaluate each sensor
     for sensor in ["ph", "tds", "temperature", "humidity"]:
         value = reading_dict.get(sensor)
-        sensor_ranges = ranges[sensor]
+        if value is None:
+            status, recommendation = handle_none()
+        else:
+            sensor_ranges = ranges[sensor]
 
-        status = evaluate_status(value, sensor_ranges)
+            status = evaluate_status(value, sensor_ranges)
+            recommendation = generate_recommendation(sensor, value, status)
+        
         feedback[f"{sensor}_status"] = status
-
-        recommendation = generate_recommendation(sensor, value, status)
         feedback[f"{sensor}_recommendation"] = recommendation
 
-        # if sensor=="temperature":
-        #     print("ASASASSA", value, status, recommendation)
 
     # Process alerts for sensors
     process_alerts(reading_dict, feedback)
@@ -51,6 +52,8 @@ def evaluate_status(value, ranges):
         return "good"
     elif ok_min <= value <= ok_max:
         return "ok"
+    elif value is None:
+        return "bad" # maybe change in the future
     else:
         return "bad"
 
@@ -166,6 +169,8 @@ def process_alerts(reading_dict, feedback):
     }
 
     for sensor, value in sensor_map.items():
+        if value is None:
+            continue
         status = feedback.get(f"{sensor}_status")
         if status in ["bad", "ok"]:
             recommendation = feedback.get(f"{sensor}_recommendation")
@@ -178,3 +183,15 @@ def process_alerts(reading_dict, feedback):
 
         elif status == "good":
             resolve_alert(sensor)
+
+
+def handle_none():
+    status = "invalid"
+    feedback = {
+        "short": "Invalid data recieve",
+                "details": (
+                    "This sensor has receive a data beyond expected values, therefore will not be processed.\n"
+                    "Please check on this sensor as soon as possible"
+                )
+    }
+    return status, feedback
