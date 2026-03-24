@@ -3,6 +3,8 @@ from sensor.models import SensorReading
 
 
 def normalize_ph(reading: SensorReading, ema : EMASmoother):
-    new_reading = reading.model_copy()
-    new_reading.ph = ema.update(reading.ph)
-    return new_reading
+    if reading.ph:
+        new_reading = reading.model_copy()
+        new_reading.ph = ema.update(reading.ph)
+        return new_reading
+    return reading

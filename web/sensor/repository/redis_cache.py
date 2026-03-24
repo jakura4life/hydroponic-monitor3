@@ -67,6 +67,8 @@ def get_cached_hourly(range_label: str) -> list[HourlyAggregate] | None:
     data = r.get(key)
     if not data:
         return None
+    print("[REDIS] Time left to key expiring.", r.ttl(key))
+
 
     raw_list = json.loads(data)
     return [HourlyAggregate.from_epoch(**item) for item in raw_list]

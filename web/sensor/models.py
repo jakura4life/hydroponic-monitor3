@@ -27,7 +27,13 @@ class SensorReading(BaseModel):
         if v is not None and not (0 <= v <= 100):
             raise ValueError("Humidity must be between 0 and 100")
         return v
-
+    
+    @field_validator("temperature")
+    @classmethod
+    def validate_temperature(cls, v):
+        if v is not None and not (-40 <= v <= 80):
+            raise ValueError("Temperature exceed scale limit")
+        return v
 
     # --- Factory Methods ---
     @classmethod
