@@ -1,5 +1,5 @@
 services:
-  web:
+  hydroponic_dsp:
       build: .
       container_name: hydroponic-django
       env_file:
@@ -11,9 +11,8 @@ services:
           python manage.py migrate &&
           python manage.py runserver 0.0.0.0:8000"
       volumes:
-        - .:/web
-        # - sqlite_data:/web/data
-        - ./data:/web/data
+        - .:/app
+        - ./data:/app/data
       ports:
         - "8000:8000"
       environment:
@@ -42,10 +41,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-
-# volumes:
-#   sqlite_data:
 
 networks:
   django_network:

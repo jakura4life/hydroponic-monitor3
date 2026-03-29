@@ -40,3 +40,4 @@ web/pip.txt
 *.DS_Store
 
 *__pycache__
+web/data/db.sqlite3
