@@ -9,7 +9,8 @@ Aliff Fayruz (24008753)
 
 ## Overview
 
-The final code used for the Arduino and ESP32 are located in ('arduinoIDE/Main')
+> [!IMPORTANT]
+> The final code used for the Arduino and ESP32 are located in ('arduinoIDE/Main')
 
 The backend development, which used the Python Django Framework, is located under web.
 
